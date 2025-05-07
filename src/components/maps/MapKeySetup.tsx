@@ -26,7 +26,7 @@ const MapKeySetup = ({ onKeySet }: { onKeySet: () => void }) => {
     <div className="p-6 border rounded-lg shadow-md bg-white">
       <h3 className="text-xl font-bold mb-4">Set Up Google Maps</h3>
       
-      <Alert variant="warning" className="mb-4">
+      <Alert className="mb-4">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
           For map functionality to work, you need to provide your Google Maps API key.

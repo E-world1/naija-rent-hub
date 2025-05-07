@@ -19,7 +19,7 @@ const GoogleMap = ({ location, address, height = "400px", zoom = 15 }: GoogleMap
       // Load Google Maps script dynamically
       if (!window.google) {
         const googleMapsScript = document.createElement("script");
-        googleMapsScript.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.GOOGLE_MAPS_API_KEY || ""}`;
+        googleMapsScript.src = `https://maps.googleapis.com/maps/api/js?key=${window.googleMapsApiKey || ""}`;
         googleMapsScript.async = true;
         googleMapsScript.defer = true;
         document.head.appendChild(googleMapsScript);
