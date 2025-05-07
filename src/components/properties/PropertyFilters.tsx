@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +18,7 @@ import {
 } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
 import { nigerianStates, lgasByState } from "@/data/nigerianStatesAndLgas";
+import { MapPin } from "lucide-react";
 
 interface FiltersProps {
   onApplyFilters: (filters: any) => void;
@@ -33,6 +33,7 @@ const PropertyFilters = ({ onApplyFilters }: FiltersProps) => {
   const [bedrooms, setBedrooms] = useState("");
   const [bathrooms, setBathrooms] = useState("");
   const [features, setFeatures] = useState<string[]>([]);
+  const [nearbyLocation, setNearbyLocation] = useState("");
 
   // Update available LGAs when state changes
   useEffect(() => {
@@ -61,6 +62,7 @@ const PropertyFilters = ({ onApplyFilters }: FiltersProps) => {
       bedrooms,
       bathrooms,
       features,
+      nearbyLocation,
     });
   };
 
@@ -72,6 +74,7 @@ const PropertyFilters = ({ onApplyFilters }: FiltersProps) => {
     setBedrooms("");
     setBathrooms("");
     setFeatures([]);
+    setNearbyLocation("");
     onApplyFilters({});
   };
 
@@ -152,6 +155,34 @@ const PropertyFilters = ({ onApplyFilters }: FiltersProps) => {
                   </Select>
                 </div>
               )}
+              
+              <div>
+                <Label htmlFor="nearbyLocation">Nearby Location</Label>
+                <div className="flex">
+                  <Input
+                    id="nearbyLocation"
+                    placeholder="Search by landmark or address"
+                    value={nearbyLocation}
+                    onChange={(e) => setNearbyLocation(e.target.value)}
+                    className="w-full"
+                  />
+                  <Button 
+                    type="button" 
+                    size="icon" 
+                    variant="outline"
+                    className="ml-2"
+                    onClick={() => {
+                      // In a real app, would use browser geolocation API
+                      alert("Getting your current location...");
+                    }}
+                  >
+                    <MapPin className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Enter landmarks, streets, or use your current location
+                </p>
+              </div>
             </div>
           </AccordionContent>
         </AccordionItem>

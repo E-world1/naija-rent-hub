@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import PaystackCheckout from "@/components/payment/PaystackCheckout";
+import GoogleMap from "@/components/maps/GoogleMap";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -250,12 +251,13 @@ const PropertyDetails = () => {
               <TabsContent value="location">
                 <h3 className="text-xl font-semibold mb-2">Location</h3>
                 <p className="text-gray-600 mb-4">{property.address}</p>
-                <div className="bg-gray-200 h-64 rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    <MapPin className="h-8 w-8 text-naija-primary mx-auto mb-2" />
-                    <p className="text-gray-600">Map view will be displayed here</p>
-                    <p className="text-sm text-gray-500">Integrated with Google Maps or similar service</p>
-                  </div>
+                <div className="bg-gray-50 rounded-lg mb-6">
+                  <GoogleMap 
+                    location={property.location} 
+                    address={property.address} 
+                    height="400px" 
+                    zoom={15}
+                  />
                 </div>
                 <div className="mt-4">
                   <h4 className="font-medium mb-2">Nearby Amenities:</h4>

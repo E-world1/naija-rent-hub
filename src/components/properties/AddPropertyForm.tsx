@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,9 +12,10 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
-import { Upload } from "lucide-react";
+import { Upload, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { nigerianStates, lgasByState } from "@/data/nigerianStatesAndLgas";
+import GoogleMap from "@/components/maps/GoogleMap";
 
 const AddPropertyForm = () => {
   const navigate = useNavigate();
@@ -35,11 +35,13 @@ const AddPropertyForm = () => {
     area: "",
     address: "",
     features: [] as string[],
+    coordinates: { lat: "", lng: "" },
   });
   
   const [availableLgas, setAvailableLgas] = useState<string[]>([]);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [showMap, setShowMap] = useState(false);
 
   // Update available LGAs when state changes
   useEffect(() => {
@@ -118,6 +120,19 @@ const AddPropertyForm = () => {
   
   const removeImage = (index: number) => {
     setUploadedImages((prev) => prev.filter((_, i) => i !== index));
+  };
+  
+  const handleLocationSearch = () => {
+    // Show the map for location selection if we have state, lga, and area
+    if (propertyData.state && propertyData.lga) {
+      setShowMap(true);
+    } else {
+      toast({
+        title: "Missing Location Info",
+        description: "Please select at least state and LGA before pinning location on map.",
+        variant: "destructive",
+      });
+    }
   };
   
   const handleSubmit = (e: React.FormEvent) => {
@@ -338,15 +353,42 @@ const AddPropertyForm = () => {
           
           <div className="md:col-span-2 space-y-2">
             <Label htmlFor="address">Full Address</Label>
-            <Input
-              id="address"
-              name="address"
-              value={propertyData.address}
-              onChange={handleChange}
-              placeholder="Full address of the property"
-            />
+            <div className="flex">
+              <Input
+                id="address"
+                name="address"
+                value={propertyData.address}
+                onChange={handleChange}
+                placeholder="Full address of the property"
+                className="w-full"
+              />
+              <Button 
+                type="button"
+                variant="outline"
+                className="ml-2 whitespace-nowrap"
+                onClick={handleLocationSearch}
+              >
+                <MapPin className="h-4 w-4 mr-2" />
+                Pin on Map
+              </Button>
+            </div>
           </div>
         </div>
+        
+        {showMap && (
+          <div className="mt-4">
+            <p className="text-sm mb-2">Confirm your property location on the map:</p>
+            <div className="h-[300px] rounded-lg overflow-hidden border">
+              <GoogleMap 
+                location={`${propertyData.area || ''}, ${propertyData.lga}, ${propertyData.state}, Nigeria`} 
+                address={propertyData.address}
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              For accurate location, provide as much detail as possible in the address field.
+            </p>
+          </div>
+        )}
       </div>
       
       <div className="space-y-6">
