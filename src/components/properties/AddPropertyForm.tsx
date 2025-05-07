@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
 import { Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { nigerianStates, lgasByState } from "@/data/nigerianStatesAndLgas";
 
 const AddPropertyForm = () => {
   const navigate = useNavigate();
@@ -29,15 +30,30 @@ const AddPropertyForm = () => {
     bedrooms: "",
     bathrooms: "",
     squareFeet: "",
-    location: "",
     state: "",
+    lga: "",
     area: "",
     address: "",
     features: [] as string[],
   });
   
+  const [availableLgas, setAvailableLgas] = useState<string[]>([]);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  // Update available LGAs when state changes
+  useEffect(() => {
+    if (propertyData.state) {
+      setAvailableLgas(lgasByState[propertyData.state] || []);
+      // Reset LGA when state changes
+      setPropertyData(prev => ({
+        ...prev,
+        lga: ""
+      }));
+    } else {
+      setAvailableLgas([]);
+    }
+  }, [propertyData.state]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -108,7 +124,7 @@ const AddPropertyForm = () => {
     e.preventDefault();
     
     // Validation
-    if (!propertyData.title || !propertyData.price || !propertyData.state || !propertyData.area) {
+    if (!propertyData.title || !propertyData.price || !propertyData.state || !propertyData.lga) {
       toast({
         title: "Missing Information",
         description: "Please fill all required fields.",
@@ -279,19 +295,38 @@ const AddPropertyForm = () => {
               <SelectTrigger id="state">
                 <SelectValue placeholder="Select state" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="lagos">Lagos</SelectItem>
-                <SelectItem value="abuja">Abuja</SelectItem>
-                <SelectItem value="rivers">Rivers</SelectItem>
-                <SelectItem value="oyo">Oyo</SelectItem>
-                <SelectItem value="kano">Kano</SelectItem>
-                <SelectItem value="enugu">Enugu</SelectItem>
+              <SelectContent className="max-h-72">
+                {nigerianStates.map((stateName) => (
+                  <SelectItem key={stateName} value={stateName}>
+                    {stateName}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="area">Area/City *</Label>
+            <Label htmlFor="lga">Local Government Area *</Label>
+            <Select
+              value={propertyData.lga}
+              onValueChange={(value) => handleSelectChange("lga", value)}
+              disabled={!propertyData.state}
+            >
+              <SelectTrigger id="lga">
+                <SelectValue placeholder={propertyData.state ? "Select LGA" : "Select state first"} />
+              </SelectTrigger>
+              <SelectContent className="max-h-72">
+                {availableLgas.map((lgaName) => (
+                  <SelectItem key={lgaName} value={lgaName}>
+                    {lgaName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="area">Area/Neighborhood</Label>
             <Input
               id="area"
               name="area"

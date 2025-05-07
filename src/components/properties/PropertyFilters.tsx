@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +18,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
+import { nigerianStates, lgasByState } from "@/data/nigerianStatesAndLgas";
 
 interface FiltersProps {
   onApplyFilters: (filters: any) => void;
@@ -25,11 +26,23 @@ interface FiltersProps {
 
 const PropertyFilters = ({ onApplyFilters }: FiltersProps) => {
   const [priceRange, setPriceRange] = useState([300000, 3000000]);
-  const [location, setLocation] = useState("");
+  const [state, setState] = useState("");
+  const [lga, setLga] = useState("");
+  const [availableLgas, setAvailableLgas] = useState<string[]>([]);
   const [propertyType, setPropertyType] = useState("");
   const [bedrooms, setBedrooms] = useState("");
   const [bathrooms, setBathrooms] = useState("");
   const [features, setFeatures] = useState<string[]>([]);
+
+  // Update available LGAs when state changes
+  useEffect(() => {
+    if (state) {
+      setAvailableLgas(lgasByState[state] || []);
+      setLga(""); // Reset LGA when state changes
+    } else {
+      setAvailableLgas([]);
+    }
+  }, [state]);
 
   const handleFeatureChange = (feature: string) => {
     setFeatures(prev => 
@@ -42,7 +55,8 @@ const PropertyFilters = ({ onApplyFilters }: FiltersProps) => {
   const handleApplyFilters = () => {
     onApplyFilters({
       priceRange,
-      location,
+      state,
+      lga,
       propertyType,
       bedrooms,
       bathrooms,
@@ -52,7 +66,8 @@ const PropertyFilters = ({ onApplyFilters }: FiltersProps) => {
 
   const handleReset = () => {
     setPriceRange([300000, 3000000]);
-    setLocation("");
+    setState("");
+    setLga("");
     setPropertyType("");
     setBedrooms("");
     setBathrooms("");
@@ -103,28 +118,38 @@ const PropertyFilters = ({ onApplyFilters }: FiltersProps) => {
             Location
           </AccordionTrigger>
           <AccordionContent>
-            <div className="space-y-2">
-              <Select value={location} onValueChange={setLocation}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select location" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="lagos">Lagos</SelectItem>
-                  <SelectItem value="abuja">Abuja</SelectItem>
-                  <SelectItem value="ph">Port Harcourt</SelectItem>
-                  <SelectItem value="ibadan">Ibadan</SelectItem>
-                  <SelectItem value="kano">Kano</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="state">State</Label>
+                <Select value={state} onValueChange={setState}>
+                  <SelectTrigger id="state">
+                    <SelectValue placeholder="Select state" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {nigerianStates.map((stateName) => (
+                      <SelectItem key={stateName} value={stateName}>
+                        {stateName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               
-              {location && (
-                <div className="mt-2">
-                  <Label htmlFor="specific-location" className="text-sm">Area/Neighborhood</Label>
-                  <Input 
-                    id="specific-location" 
-                    placeholder="E.g., Lekki Phase 1"
-                    className="mt-1"
-                  />
+              {state && (
+                <div>
+                  <Label htmlFor="lga">Local Government Area</Label>
+                  <Select value={lga} onValueChange={setLga}>
+                    <SelectTrigger id="lga">
+                      <SelectValue placeholder="Select LGA" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableLgas.map((lgaName) => (
+                        <SelectItem key={lgaName} value={lgaName}>
+                          {lgaName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
             </div>

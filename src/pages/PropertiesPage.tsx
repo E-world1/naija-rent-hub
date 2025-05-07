@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
@@ -176,10 +177,17 @@ const PropertiesPage = () => {
       });
     }
     
-    // Location filter
-    if (filters.location) {
+    // State filter
+    if (filters.state) {
       filtered = filtered.filter(property => 
-        property.location.toLowerCase().includes(filters.location.toLowerCase())
+        property.location.toLowerCase().includes(filters.state.toLowerCase())
+      );
+    }
+    
+    // LGA filter
+    if (filters.lga) {
+      filtered = filtered.filter(property => 
+        property.location.toLowerCase().includes(filters.lga.toLowerCase())
       );
     }
     
@@ -266,6 +274,24 @@ const PropertiesPage = () => {
     setFilteredProperties(properties);
   };
 
+  // Helper function to format filter label
+  const getFilterLabel = (key: string, value: any) => {
+    switch (key) {
+      case "priceRange":
+        return `₦${value[0].toLocaleString()} - ₦${value[1].toLocaleString()}`;
+      case "bedrooms":
+        return `${value}+ Bedrooms`;
+      case "bathrooms":
+        return `${value}+ Bathrooms`;
+      case "state":
+      case "lga":
+      case "propertyType":
+        return value;
+      default:
+        return value.toString();
+    }
+  };
+
   return (
     <Layout>
       <div className="bg-naija-accent py-8">
@@ -320,21 +346,11 @@ const PropertiesPage = () => {
               <span className="text-sm text-gray-600">Active filters:</span>
               {Object.keys(activeFilters).map(key => {
                 if (key === "search" || key === "features") return null;
-                
-                let label = "";
-                if (key === "priceRange") {
-                  label = `₦${activeFilters[key][0].toLocaleString()} - ₦${activeFilters[key][1].toLocaleString()}`;
-                } else if (key === "bedrooms") {
-                  label = `${activeFilters[key]}+ Bedrooms`;
-                } else if (key === "bathrooms") {
-                  label = `${activeFilters[key]}+ Bathrooms`;
-                } else {
-                  label = activeFilters[key];
-                }
+                if (!activeFilters[key]) return null;
                 
                 return (
                   <div key={key} className="bg-gray-200 text-gray-800 text-sm rounded-full px-3 py-1 flex items-center">
-                    {label}
+                    {getFilterLabel(key, activeFilters[key])}
                     <button 
                       onClick={() => {
                         const newFilters = { ...activeFilters };
@@ -348,6 +364,21 @@ const PropertiesPage = () => {
                   </div>
                 );
               })}
+              
+              {activeFilters.features?.length > 0 && (
+                <div className="bg-gray-200 text-gray-800 text-sm rounded-full px-3 py-1 flex items-center">
+                  {`${activeFilters.features.length} Features`}
+                  <button 
+                    onClick={() => {
+                      const newFilters = { ...activeFilters, features: [] };
+                      filterProperties(newFilters);
+                    }}
+                    className="ml-2 text-gray-600 hover:text-gray-800"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
               
               <button
                 onClick={clearFilters}
