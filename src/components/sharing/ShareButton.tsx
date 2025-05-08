@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Share, Facebook, Instagram, Twitter, Linkedin, WhatsApp, X } from "lucide-react";
+import { Share, Facebook, Instagram, Twitter, Linkedin } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -45,7 +45,7 @@ const ShareButton = ({
   const socialPlatforms = [
     {
       name: "WhatsApp",
-      icon: <WhatsApp className="text-green-600" />,
+      icon: <span className="text-green-600 text-xl">📱</span>,
       shareUrl: `https://wa.me/?text=${encodeURIComponent(`${title} - ${description} ${url}`)}`,
     },
     {
