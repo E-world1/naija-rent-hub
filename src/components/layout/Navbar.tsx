@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Search, User, Menu, X } from "lucide-react";
+import ShareButton from "@/components/sharing/ShareButton";
 
 const Navbar = () => {
   const { toast } = useToast();
@@ -69,6 +69,11 @@ const Navbar = () => {
             <Link to="/search" className="text-gray-700 hover:text-naija-primary">
               <Search size={20} />
             </Link>
+            
+            {isLoggedIn && (
+              <ShareButton />
+            )}
+            
             {isLoggedIn ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -153,6 +158,13 @@ const Navbar = () => {
             >
               About
             </Link>
+            
+            {isLoggedIn && (
+              <div className="flex justify-center py-2">
+                <ShareButton />
+              </div>
+            )}
+            
             {isLoggedIn ? (
               <>
                 <Link

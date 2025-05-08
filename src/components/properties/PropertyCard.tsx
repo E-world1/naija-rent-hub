@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Bed, Home, CreditCard } from "lucide-react";
+import ShareButton from "@/components/sharing/ShareButton";
 
 export interface Property {
   id: number;
@@ -22,9 +23,10 @@ export interface Property {
 
 interface PropertyCardProps {
   property: Property;
+  isLoggedIn?: boolean;
 }
 
-const PropertyCard = ({ property }: PropertyCardProps) => {
+const PropertyCard = ({ property, isLoggedIn = false }: PropertyCardProps) => {
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 property-card-shadow h-full">
       <div className="relative h-48 overflow-hidden">
@@ -77,11 +79,19 @@ const PropertyCard = ({ property }: PropertyCardProps) => {
           <div className="text-sm text-naija-primary font-medium">
             {property.agent}
           </div>
-          <Link to={`/property/${property.id}`}>
-            <Button variant="ghost" size="sm" className="text-naija-primary hover:text-naija-primary/90 p-0">
-              View Details
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            {isLoggedIn && (
+              <ShareButton 
+                title={`Check out ${property.title} on NaijaRentHub`} 
+                description={`${property.bedrooms} bedroom property in ${property.location} for ${property.price}/${property.period}`}
+              />
+            )}
+            <Link to={`/property/${property.id}`}>
+              <Button variant="ghost" size="sm" className="text-naija-primary hover:text-naija-primary/90 p-0">
+                View Details
+              </Button>
+            </Link>
+          </div>
         </div>
       </CardContent>
     </Card>
