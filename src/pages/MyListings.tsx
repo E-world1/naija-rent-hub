@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
@@ -23,86 +23,113 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, MoreHorizontal, Edit, Trash, Eye, MapPin, Bed } from "lucide-react";
+import { Plus, MoreHorizontal, Edit, Trash, Eye, MapPin, Bed, Loader } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 
-// Mock data for agent's property listings
-const initialListings = [
-  {
-    id: 1,
-    title: "Luxury 3 Bedroom Apartment",
-    location: "Lekki Phase 1, Lagos",
-    price: "₦1,500,000",
-    period: "yearly",
-    image: "https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?auto=format&fit=crop&q=80&w=1470&ixlib=rb-4.0.3",
-    bedrooms: 3,
-    status: "active",
-    views: 145,
-    date: "2023-01-15",
-  },
-  {
-    id: 2,
-    title: "Modern 2 Bedroom Flat",
-    location: "Wuse Zone 6, Abuja",
-    price: "₦1,200,000",
-    period: "yearly",
-    image: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=1470&ixlib=rb-4.0.3",
-    bedrooms: 2,
-    status: "active",
-    views: 87,
-    date: "2023-02-20",
-  },
-  {
-    id: 3,
-    title: "Spacious 4 Bedroom Duplex",
-    location: "GRA Phase 2, Port Harcourt",
-    price: "₦2,500,000",
-    period: "yearly",
-    image: "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80&w=1470&ixlib=rb-4.0.3",
-    bedrooms: 4,
-    status: "rented",
-    views: 210,
-    date: "2022-11-05",
-  },
-  {
-    id: 4,
-    title: "Cozy 1 Bedroom Studio",
-    location: "Ikeja GRA, Lagos",
-    price: "₦800,000",
-    period: "yearly",
-    image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&q=80&w=1470&ixlib=rb-4.0.3",
-    bedrooms: 1,
-    status: "inactive",
-    views: 42,
-    date: "2023-03-10",
-  },
-];
+// Define Property type to match database structure
+interface Property {
+  id: number;
+  title: string;
+  location?: string;
+  price: string;
+  period: string;
+  image: string;
+  bedrooms: number;
+  status: string;
+  views?: number;
+  date?: string;
+  created_at: string;
+  state: string;
+  lga: string;
+  area?: string;
+}
 
 const MyListings = () => {
-  const { toast } = useToast();
-  const [listings, setListings] = useState(initialListings);
+  const { toast: uiToast } = useToast();
+  const { user } = useAuth();
+  const [listings, setListings] = useState<Property[]>([]);
   const [filter, setFilter] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch listings from Supabase
+  useEffect(() => {
+    const fetchListings = async () => {
+      if (!user) return;
+      
+      try {
+        setLoading(true);
+        
+        const { data, error } = await supabase
+          .from('properties')
+          .select('*')
+          .eq('agent_id', user.id)
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        console.log("Fetched properties:", data);
+        setListings(data || []);
+      } catch (error: any) {
+        console.error("Error fetching listings:", error);
+        setError(error.message);
+        toast.error("Error loading properties", error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchListings();
+  }, [user]);
 
   const filteredListings = filter === "all" 
     ? listings 
     : listings.filter(listing => listing.status === filter);
 
-  const handleDeleteListing = (id: number) => {
-    setListings(listings.filter(listing => listing.id !== id));
-    toast({
-      title: "Property Deleted",
-      description: "The property has been removed from your listings.",
-    });
+  const handleDeleteListing = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('properties')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      setListings(listings.filter(listing => listing.id !== id));
+      
+      uiToast({
+        title: "Property Deleted",
+        description: "The property has been removed from your listings.",
+      });
+    } catch (error: any) {
+      console.error("Error deleting property:", error);
+      toast.error("Error deleting property", error.message);
+    }
   };
 
-  const handleStatusUpdate = (id: number, newStatus: string) => {
-    setListings(listings.map(listing => 
-      listing.id === id ? { ...listing, status: newStatus } : listing
-    ));
-    
-    toast({
-      title: "Status Updated",
-      description: `The property status has been updated to ${newStatus}.`,
-    });
+  const handleStatusUpdate = async (id: number, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('properties')
+        .update({ status: newStatus })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      setListings(listings.map(listing => 
+        listing.id === id ? { ...listing, status: newStatus } : listing
+      ));
+      
+      uiToast({
+        title: "Status Updated",
+        description: `The property status has been updated to ${newStatus}.`,
+      });
+    } catch (error: any) {
+      console.error("Error updating property status:", error);
+      toast.error("Error updating status", error.message);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -117,6 +144,48 @@ const MyListings = () => {
         return "bg-gray-500";
     }
   };
+
+  // Format location string from state, lga, area
+  const formatLocation = (property: Property) => {
+    const parts = [
+      property.area,
+      property.lga,
+      property.state
+    ].filter(Boolean);
+    return parts.join(', ');
+  };
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex justify-center items-center py-20">
+            <Loader className="h-8 w-8 animate-spin text-naija-primary" />
+            <span className="ml-2">Loading your properties...</span>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center py-12 bg-red-50 rounded-lg">
+            <h3 className="text-xl font-medium mb-2 text-red-700">Error Loading Properties</h3>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <Button 
+              onClick={() => window.location.reload()} 
+              className="bg-naija-primary hover:bg-naija-primary/90"
+            >
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -199,7 +268,7 @@ const MyListings = () => {
                           </div>
                           <div className="flex items-center text-gray-600 mb-3">
                             <MapPin className="h-4 w-4 mr-1" />
-                            <span>{listing.location}</span>
+                            <span>{formatLocation(listing)}</span>
                           </div>
                         </div>
                         <div className="mt-2 md:mt-0">
@@ -218,13 +287,13 @@ const MyListings = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
-                          <span className="text-sm">{listing.views} Views</span>
+                          <span className="text-sm">{listing.views || 0} Views</span>
                         </div>
                         <div className="flex items-center">
                           <svg className="h-4 w-4 text-gray-500 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2m-6 0h6m-6 0v10a2 2 0 002 2h2a2 2 0 002-2V7" />
                           </svg>
-                          <span className="text-sm">Listed on {new Date(listing.date).toLocaleDateString()}</span>
+                          <span className="text-sm">Listed on {new Date(listing.created_at).toLocaleDateString()}</span>
                         </div>
                       </div>
 

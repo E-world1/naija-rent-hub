@@ -16,10 +16,14 @@ import { Upload, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { nigerianStates, lgasByState } from "@/data/nigerianStatesAndLgas";
 import GoogleMap from "@/components/maps/GoogleMap";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 
 const AddPropertyForm = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [propertyData, setPropertyData] = useState({
     title: "",
@@ -110,7 +114,7 @@ const AddPropertyForm = () => {
         
         setUploadedImages((prev) => [...prev, ...newImages]);
         
-        toast({
+        uiToast({
           title: "Images Uploaded",
           description: `${e.target.files?.length} images have been uploaded.`,
         });
@@ -127,7 +131,7 @@ const AddPropertyForm = () => {
     if (propertyData.state && propertyData.lga) {
       setShowMap(true);
     } else {
-      toast({
+      uiToast({
         title: "Missing Location Info",
         description: "Please select at least state and LGA before pinning location on map.",
         variant: "destructive",
@@ -135,12 +139,12 @@ const AddPropertyForm = () => {
     }
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validation
     if (!propertyData.title || !propertyData.price || !propertyData.state || !propertyData.lga) {
-      toast({
+      uiToast({
         title: "Missing Information",
         description: "Please fill all required fields.",
         variant: "destructive",
@@ -149,7 +153,7 @@ const AddPropertyForm = () => {
     }
     
     if (uploadedImages.length === 0) {
-      toast({
+      uiToast({
         title: "No Images",
         description: "Please upload at least one image of the property.",
         variant: "destructive",
@@ -159,17 +163,44 @@ const AddPropertyForm = () => {
     
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      
-      toast({
-        title: "Property Added",
-        description: "Your property has been listed successfully.",
-      });
-      
+    try {
+      // Create property in Supabase
+      const { data, error } = await supabase
+        .from('properties')
+        .insert([
+          {
+            title: propertyData.title,
+            description: propertyData.description,
+            type: propertyData.type,
+            price: propertyData.price,
+            period: propertyData.period,
+            bedrooms: parseInt(propertyData.bedrooms) || 0,
+            bathrooms: parseInt(propertyData.bathrooms) || 0,
+            square_feet: propertyData.squareFeet,
+            state: propertyData.state,
+            lga: propertyData.lga,
+            area: propertyData.area,
+            address: propertyData.address,
+            features: propertyData.features,
+            image: uploadedImages[0], // Using first image as main image
+            images: uploadedImages,
+            agent_id: user?.id,
+            status: 'active'
+          }
+        ])
+        .select();
+
+      if (error) throw error;
+
+      toast.success("Property Added", "Your property has been listed successfully.");
+      console.log("Property created:", data);
       navigate("/my-listings");
-    }, 2000);
+    } catch (error: any) {
+      console.error("Error creating property:", error);
+      toast.error("Error", error.message || "Failed to create property listing.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
