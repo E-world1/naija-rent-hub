@@ -1,46 +1,27 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useAuth } from "@/context/AuthContext";
+import { Loader } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const LoginForm = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
+  const { signIn, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [userType, setUserType] = useState<"renter" | "agent">("renter");
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!email || !password) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive",
-      });
       return;
     }
     
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      
-      // Mock login success
-      toast({
-        title: "Login Successful",
-        description: `Welcome back, ${userType === "agent" ? "Agent" : "Renter"}!`,
-      });
-      
-      navigate("/");
-    }, 1500);
+    await signIn(email, password);
   };
 
   return (
@@ -60,9 +41,9 @@ const LoginForm = () => {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label htmlFor="password">Password</Label>
-          <a href="/forgot-password" className="text-sm text-naija-primary hover:underline">
+          <Link to="/forgot-password" className="text-sm text-naija-primary hover:underline">
             Forgot your password?
-          </a>
+          </Link>
         </div>
         <Input
           id="password"
@@ -109,16 +90,23 @@ const LoginForm = () => {
       <Button 
         type="submit" 
         className="w-full bg-naija-primary hover:bg-naija-primary/90"
-        disabled={isLoading}
+        disabled={loading}
       >
-        {isLoading ? "Logging in..." : "Login"}
+        {loading ? (
+          <span className="flex items-center">
+            <Loader className="mr-2 h-4 w-4 animate-spin" />
+            Logging in...
+          </span>
+        ) : (
+          "Login"
+        )}
       </Button>
       
       <div className="text-center text-sm text-gray-500 mt-4">
         Don't have an account?{" "}
-        <a href="#" className="text-naija-primary hover:underline">
+        <Link to="/signup" className="text-naija-primary hover:underline">
           Sign up now
-        </a>
+        </Link>
       </div>
     </form>
   );

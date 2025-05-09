@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -10,35 +11,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Search, User, Menu, X } from "lucide-react";
 import ShareButton from "@/components/sharing/ShareButton";
+import { useAuth } from "@/context/AuthContext";
 
 const Navbar = () => {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  // In a real app, we'd use authentication context
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userType, setUserType] = useState<'renter' | 'agent' | null>(null);
+  const { user, userType, signOut } = useAuth();
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
-  };
-
-  // Temporary mock login/logout functions
-  const handleLogin = (type: 'renter' | 'agent') => {
-    setIsLoggedIn(true);
-    setUserType(type);
-    toast({
-      title: "Logged in successfully",
-      description: `Welcome back, ${type}!`,
-    });
-  };
-
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setUserType(null);
-    toast({
-      title: "Logged out successfully",
-      description: "You have been logged out.",
-    });
   };
 
   return (
@@ -70,11 +51,11 @@ const Navbar = () => {
               <Search size={20} />
             </Link>
             
-            {isLoggedIn && (
+            {user && (
               <ShareButton />
             )}
             
-            {isLoggedIn ? (
+            {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative rounded-full">
@@ -95,18 +76,15 @@ const Navbar = () => {
                       <Link to="/saved-properties" className="w-full">Saved Properties</Link>
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem onClick={handleLogout}>
+                  <DropdownMenuItem onClick={signOut}>
                     Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
               <>
-                <Button variant="ghost" onClick={() => handleLogin('renter')}>
-                  Login as Renter
-                </Button>
-                <Button variant="ghost" onClick={() => handleLogin('agent')}>
-                  Login as Agent
+                <Button variant="ghost">
+                  <Link to="/login">Login</Link>
                 </Button>
                 <Button variant="default" className="bg-naija-primary hover:bg-naija-primary/90">
                   <Link to="/signup" className="text-white">Sign Up</Link>
@@ -159,13 +137,13 @@ const Navbar = () => {
               About
             </Link>
             
-            {isLoggedIn && (
+            {user && (
               <div className="flex justify-center py-2">
                 <ShareButton />
               </div>
             )}
             
-            {isLoggedIn ? (
+            {user ? (
               <>
                 <Link
                   to="/profile"
@@ -195,7 +173,7 @@ const Navbar = () => {
                 <button
                   className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-naija-primary"
                   onClick={() => {
-                    handleLogout();
+                    signOut();
                     setIsOpen(false);
                   }}
                 >
@@ -204,24 +182,13 @@ const Navbar = () => {
               </>
             ) : (
               <>
-                <button
+                <Link
+                  to="/login"
                   className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-naija-primary"
-                  onClick={() => {
-                    handleLogin('renter');
-                    setIsOpen(false);
-                  }}
+                  onClick={() => setIsOpen(false)}
                 >
-                  Login as Renter
-                </button>
-                <button
-                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-naija-primary"
-                  onClick={() => {
-                    handleLogin('agent');
-                    setIsOpen(false);
-                  }}
-                >
-                  Login as Agent
-                </button>
+                  Login
+                </Link>
                 <Link
                   to="/signup"
                   className="block px-3 py-2 rounded-md text-base font-medium bg-naija-primary text-white hover:bg-naija-primary/90"

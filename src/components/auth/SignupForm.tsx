@@ -1,15 +1,15 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useAuth } from "@/context/AuthContext";
+import { Loader } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const SignupForm = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
+  const { signUp, loading } = useAuth();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -18,7 +18,6 @@ const SignupForm = () => {
     confirmPassword: "",
     userType: "renter",
   });
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -40,37 +39,18 @@ const SignupForm = () => {
     
     // Basic validation
     if (!formData.fullName || !formData.email || !formData.phone || !formData.password) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
       return;
     }
     
     if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive",
-      });
       return;
     }
     
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      
-      // Mock signup success
-      toast({
-        title: "Registration Successful",
-        description: `Welcome to NaijaRentHub, ${formData.fullName}!`,
-      });
-      
-      navigate("/");
-    }, 1500);
+    await signUp(formData.email, formData.password, {
+      fullName: formData.fullName,
+      phone: formData.phone,
+      userType: formData.userType,
+    });
   };
 
   return (
@@ -161,20 +141,27 @@ const SignupForm = () => {
       <Button 
         type="submit" 
         className="w-full bg-naija-primary hover:bg-naija-primary/90"
-        disabled={isLoading}
+        disabled={loading}
       >
-        {isLoading ? "Creating Account..." : "Create Account"}
+        {loading ? (
+          <span className="flex items-center">
+            <Loader className="mr-2 h-4 w-4 animate-spin" />
+            Creating Account...
+          </span>
+        ) : (
+          "Create Account"
+        )}
       </Button>
       
       <div className="text-center text-sm text-gray-500">
         By signing up, you agree to our{" "}
-        <a href="/terms" className="text-naija-primary hover:underline">
+        <Link to="/terms" className="text-naija-primary hover:underline">
           Terms of Service
-        </a>{" "}
+        </Link>{" "}
         and{" "}
-        <a href="/privacy" className="text-naija-primary hover:underline">
+        <Link to="/privacy" className="text-naija-primary hover:underline">
           Privacy Policy
-        </a>
+        </Link>
       </div>
     </form>
   );
