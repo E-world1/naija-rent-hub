@@ -42,6 +42,78 @@ export type Database = {
         }
         Relationships: []
       }
+      properties: {
+        Row: {
+          address: string | null
+          agent_id: string
+          area: string | null
+          bathrooms: number | null
+          bedrooms: number | null
+          created_at: string
+          description: string | null
+          features: string[] | null
+          id: number
+          image: string | null
+          images: string[] | null
+          lga: string
+          period: string
+          price: string
+          square_feet: string | null
+          state: string
+          status: string | null
+          title: string
+          type: string | null
+          updated_at: string
+          views: number | null
+        }
+        Insert: {
+          address?: string | null
+          agent_id: string
+          area?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          created_at?: string
+          description?: string | null
+          features?: string[] | null
+          id?: number
+          image?: string | null
+          images?: string[] | null
+          lga: string
+          period?: string
+          price: string
+          square_feet?: string | null
+          state: string
+          status?: string | null
+          title: string
+          type?: string | null
+          updated_at?: string
+          views?: number | null
+        }
+        Update: {
+          address?: string | null
+          agent_id?: string
+          area?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          created_at?: string
+          description?: string | null
+          features?: string[] | null
+          id?: number
+          image?: string | null
+          images?: string[] | null
+          lga?: string
+          period?: string
+          price?: string
+          square_feet?: string | null
+          state?: string
+          status?: string | null
+          title?: string
+          type?: string | null
+          updated_at?: string
+          views?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -65,8 +65,7 @@ const MyListings = () => {
         const { data, error } = await supabase
           .from('properties')
           .select('*')
-          .eq('agent_id', user.id)
-          .order('created_at', { ascending: false });
+          .eq('agent_id', user.id);
         
         if (error) throw error;
         
@@ -75,7 +74,9 @@ const MyListings = () => {
       } catch (error: any) {
         console.error("Error fetching listings:", error);
         setError(error.message);
-        toast.error("Error loading properties", error.message);
+        toast.error("Error loading properties", {
+          description: error.message
+        });
       } finally {
         setLoading(false);
       }
@@ -105,7 +106,9 @@ const MyListings = () => {
       });
     } catch (error: any) {
       console.error("Error deleting property:", error);
-      toast.error("Error deleting property", error.message);
+      toast.error("Error deleting property", {
+        description: error.message
+      });
     }
   };
 
@@ -128,7 +131,9 @@ const MyListings = () => {
       });
     } catch (error: any) {
       console.error("Error updating property status:", error);
-      toast.error("Error updating status", error.message);
+      toast.error("Error updating status", {
+        description: error.message
+      });
     }
   };
 

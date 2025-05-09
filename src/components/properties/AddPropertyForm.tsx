@@ -187,17 +187,21 @@ const AddPropertyForm = () => {
             agent_id: user?.id,
             status: 'active'
           }
-        ])
-        .select();
+        ]);
 
       if (error) throw error;
 
-      toast.success("Property Added", "Your property has been listed successfully.");
+      toast.success("Property Added", {
+        description: "Your property has been listed successfully."
+      });
+      
       console.log("Property created:", data);
       navigate("/my-listings");
     } catch (error: any) {
       console.error("Error creating property:", error);
-      toast.error("Error", error.message || "Failed to create property listing.");
+      toast.error("Error", {
+        description: error.message || "Failed to create property listing."
+      });
     } finally {
       setIsLoading(false);
     }
