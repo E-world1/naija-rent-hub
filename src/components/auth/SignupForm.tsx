@@ -7,6 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/context/AuthContext";
 import { Loader } from "lucide-react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 
 const SignupForm = () => {
   const { signUp, loading } = useAuth();
@@ -18,6 +19,7 @@ const SignupForm = () => {
     confirmPassword: "",
     userType: "renter",
   });
+  const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -25,6 +27,14 @@ const SignupForm = () => {
       ...prev,
       [name]: value,
     }));
+    
+    // Clear error when field is modified
+    if (formErrors[name]) {
+      setFormErrors(prev => ({
+        ...prev,
+        [name]: ""
+      }));
+    }
   };
 
   const handleUserTypeChange = (value: string) => {
@@ -34,23 +44,55 @@ const SignupForm = () => {
     }));
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const validateForm = () => {
+    const errors: {[key: string]: string} = {};
     
-    // Basic validation
-    if (!formData.fullName || !formData.email || !formData.phone || !formData.password) {
-      return;
+    if (!formData.fullName.trim()) {
+      errors.fullName = "Full name is required";
+    }
+    
+    if (!formData.email.trim()) {
+      errors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = "Email is invalid";
+    }
+    
+    if (!formData.phone.trim()) {
+      errors.phone = "Phone number is required";
+    }
+    
+    if (!formData.password) {
+      errors.password = "Password is required";
+    } else if (formData.password.length < 6) {
+      errors.password = "Password must be at least 6 characters";
     }
     
     if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = "Passwords do not match";
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
       return;
     }
     
-    await signUp(formData.email, formData.password, {
-      fullName: formData.fullName,
-      phone: formData.phone,
-      userType: formData.userType,
-    });
+    try {
+      await signUp(formData.email, formData.password, {
+        fullName: formData.fullName,
+        phone: formData.phone,
+        userType: formData.userType,
+      });
+    } catch (error: any) {
+      toast.error("Failed to create account", { 
+        description: error.message || "An unexpected error occurred" 
+      });
+    }
   };
 
   return (
@@ -64,8 +106,11 @@ const SignupForm = () => {
           placeholder="John Doe"
           value={formData.fullName}
           onChange={handleChange}
-          required
+          className={formErrors.fullName ? "border-red-500" : ""}
         />
+        {formErrors.fullName && (
+          <p className="text-sm text-red-500">{formErrors.fullName}</p>
+        )}
       </div>
       
       <div className="space-y-2">
@@ -77,8 +122,11 @@ const SignupForm = () => {
           placeholder="you@example.com"
           value={formData.email}
           onChange={handleChange}
-          required
+          className={formErrors.email ? "border-red-500" : ""}
         />
+        {formErrors.email && (
+          <p className="text-sm text-red-500">{formErrors.email}</p>
+        )}
       </div>
       
       <div className="space-y-2">
@@ -90,8 +138,11 @@ const SignupForm = () => {
           placeholder="080XXXXXXXX"
           value={formData.phone}
           onChange={handleChange}
-          required
+          className={formErrors.phone ? "border-red-500" : ""}
         />
+        {formErrors.phone && (
+          <p className="text-sm text-red-500">{formErrors.phone}</p>
+        )}
       </div>
       
       <div className="space-y-2">
@@ -103,8 +154,11 @@ const SignupForm = () => {
           placeholder="••••••••"
           value={formData.password}
           onChange={handleChange}
-          required
+          className={formErrors.password ? "border-red-500" : ""}
         />
+        {formErrors.password && (
+          <p className="text-sm text-red-500">{formErrors.password}</p>
+        )}
       </div>
       
       <div className="space-y-2">
@@ -116,8 +170,11 @@ const SignupForm = () => {
           placeholder="••••••••"
           value={formData.confirmPassword}
           onChange={handleChange}
-          required
+          className={formErrors.confirmPassword ? "border-red-500" : ""}
         />
+        {formErrors.confirmPassword && (
+          <p className="text-sm text-red-500">{formErrors.confirmPassword}</p>
+        )}
       </div>
       
       <div className="space-y-2">
