@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, User, Menu, X } from "lucide-react";
+import { Search, User, Menu, X, MessageSquare } from "lucide-react";
 import ShareButton from "@/components/sharing/ShareButton";
 import { useAuth } from "@/context/AuthContext";
 
@@ -52,7 +52,12 @@ const Navbar = () => {
             </Link>
             
             {user && (
-              <ShareButton />
+              <>
+                <Link to="/messages" className="text-gray-700 hover:text-naija-primary">
+                  <MessageSquare size={20} />
+                </Link>
+                <ShareButton />
+              </>
             )}
             
             {user ? (
@@ -136,6 +141,16 @@ const Navbar = () => {
             >
               About
             </Link>
+            
+            {user && (
+              <Link
+                to="/messages"
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-naija-primary"
+                onClick={() => setIsOpen(false)}
+              >
+                Messages
+              </Link>
+            )}
             
             {user && (
               <div className="flex justify-center py-2">

@@ -15,6 +15,8 @@ import Agents from "./pages/Agents";
 import About from "./pages/About";
 import Profile from "./pages/Profile";
 import Contact from "./pages/Contact";
+import Messages from "./pages/Messages";
+import NewMessage from "./pages/NewMessage";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
@@ -39,6 +41,21 @@ const App = () => (
             <Route path="/profile" element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            } />
+            <Route path="/messages" element={
+              <ProtectedRoute>
+                <Messages />
+              </ProtectedRoute>
+            } />
+            <Route path="/messages/:conversationId" element={
+              <ProtectedRoute>
+                <Messages />
+              </ProtectedRoute>
+            } />
+            <Route path="/messages/new" element={
+              <ProtectedRoute>
+                <NewMessage />
               </ProtectedRoute>
             } />
             <Route path="/add-property" element={
