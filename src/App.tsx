@@ -13,6 +13,8 @@ import AddProperty from "./pages/AddProperty";
 import MyListings from "./pages/MyListings";
 import Agents from "./pages/Agents";
 import About from "./pages/About";
+import Profile from "./pages/Profile";
+import Contact from "./pages/Contact";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
@@ -31,8 +33,14 @@ const App = () => (
             <Route path="/property/:id" element={<PropertyDetails />} />
             <Route path="/agents" element={<Agents />} />
             <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Login />} />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } />
             <Route path="/add-property" element={
               <ProtectedRoute requiredUserType="agent">
                 <AddProperty />

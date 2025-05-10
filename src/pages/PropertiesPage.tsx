@@ -7,134 +7,9 @@ import PropertyFilters from "@/components/properties/PropertyFilters";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, SlidersHorizontal, X } from "lucide-react";
-
-// Mock data
-const mockProperties: Property[] = [
-  {
-    id: 1,
-    title: "Luxury 3 Bedroom Apartment",
-    location: "Lekki Phase 1, Lagos",
-    price: "₦1,500,000",
-    period: "yearly",
-    image: "https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?auto=format&fit=crop&q=80&w=1470&ixlib=rb-4.0.3",
-    bedrooms: 3,
-    bathrooms: 2,
-    featured: true,
-    agent: "Lagos Homes",
-    type: "Apartment",
-  },
-  {
-    id: 2,
-    title: "Modern 2 Bedroom Flat",
-    location: "Wuse Zone 6, Abuja",
-    price: "₦1,200,000",
-    period: "yearly",
-    image: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&q=80&w=1470&ixlib=rb-4.0.3",
-    bedrooms: 2,
-    bathrooms: 1,
-    featured: true,
-    agent: "Capital City Properties",
-    type: "Flat",
-  },
-  {
-    id: 3,
-    title: "Spacious 4 Bedroom Duplex",
-    location: "GRA Phase 2, Port Harcourt",
-    price: "₦2,500,000",
-    period: "yearly",
-    image: "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80&w=1470&ixlib=rb-4.0.3",
-    bedrooms: 4,
-    bathrooms: 3,
-    featured: true,
-    agent: "Rivers Homes",
-    type: "Duplex",
-  },
-  {
-    id: 4,
-    title: "Cozy 1 Bedroom Studio",
-    location: "Ikeja GRA, Lagos",
-    price: "₦800,000",
-    period: "yearly",
-    image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&q=80&w=1470&ixlib=rb-4.0.3",
-    bedrooms: 1,
-    bathrooms: 1,
-    agent: "Metro Realtors",
-    type: "Studio",
-  },
-  {
-    id: 5,
-    title: "Executive 5 Bedroom Mansion",
-    location: "Banana Island, Lagos",
-    price: "₦5,000,000",
-    period: "yearly",
-    image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=1475&ixlib=rb-4.0.3",
-    bedrooms: 5,
-    bathrooms: 5,
-    agent: "Luxury Homes Nigeria",
-    type: "Mansion",
-  },
-  {
-    id: 6,
-    title: "2 Bedroom Serviced Apartment",
-    location: "Oniru Estate, Lagos",
-    price: "₦1,800,000",
-    period: "yearly",
-    image: "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&q=80&w=1474&ixlib=rb-4.0.3",
-    bedrooms: 2,
-    bathrooms: 2,
-    agent: "Premium Properties",
-    type: "Apartment",
-  },
-  {
-    id: 7,
-    title: "Commercial Shop Space",
-    location: "Wuse Market, Abuja",
-    price: "₦500,000",
-    period: "yearly",
-    image: "https://images.unsplash.com/photo-1604014237800-1c9102c219da?auto=format&fit=crop&q=80&w=1470&ixlib=rb-4.0.3",
-    bedrooms: 0,
-    bathrooms: 1,
-    agent: "Business Space Realtors",
-    type: "Commercial",
-  },
-  {
-    id: 8,
-    title: "3 Bedroom Bungalow",
-    location: "Bodija, Ibadan",
-    price: "₦950,000",
-    period: "yearly",
-    image: "https://images.unsplash.com/photo-1576941089067-2de3c901e126?auto=format&fit=crop&q=80&w=1516&ixlib=rb-4.0.3",
-    bedrooms: 3,
-    bathrooms: 2,
-    agent: "Ibadan Property Hub",
-    type: "Bungalow",
-  },
-  {
-    id: 9,
-    title: "Premium Office Space",
-    location: "Victoria Island, Lagos",
-    price: "₦3,500,000",
-    period: "yearly",
-    image: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&q=80&w=1469&ixlib=rb-4.0.3",
-    bedrooms: 0,
-    bathrooms: 2,
-    agent: "Corporate Realty",
-    type: "Commercial",
-  },
-  {
-    id: 10,
-    title: "1 Bedroom Apartment",
-    location: "Yaba, Lagos",
-    price: "₦700,000",
-    period: "yearly",
-    image: "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&q=80&w=1474&ixlib=rb-4.0.3",
-    bedrooms: 1,
-    bathrooms: 1,
-    agent: "Lagos Student Homes",
-    type: "Apartment",
-  },
-];
+import { Search, SlidersHorizontal, X, Loader } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const PropertiesPage = () => {
   const location = useLocation();
@@ -142,9 +17,55 @@ const PropertiesPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOption, setSortOption] = useState("newest");
   const [showFilters, setShowFilters] = useState(false);
-  const [properties, setProperties] = useState(mockProperties);
-  const [filteredProperties, setFilteredProperties] = useState(mockProperties);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
+  const [loading, setLoading] = useState(true);
+  
+  // Fetch actual properties from Supabase
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        setLoading(true);
+        
+        const { data, error } = await supabase
+          .from('properties')
+          .select('*')
+          .eq('status', 'active');
+        
+        if (error) throw error;
+        
+        console.log("Fetched properties from Supabase:", data);
+        
+        const formattedProperties = data.map(item => ({
+          id: item.id,
+          title: item.title,
+          location: `${item.area ? `${item.area}, ` : ''}${item.lga}, ${item.state}`,
+          price: `₦${item.price}`,
+          period: item.period,
+          image: item.image,
+          bedrooms: item.bedrooms,
+          bathrooms: item.bathrooms,
+          squareFeet: item.square_feet,
+          featured: false, // Could be added as a column in the future
+          agent: "Agent", // This should be fetched from profiles in a real implementation
+          type: item.type,
+        }));
+        
+        setProperties(formattedProperties);
+        setFilteredProperties(formattedProperties);
+      } catch (error: any) {
+        console.error("Error fetching properties:", error);
+        toast.error("Error loading properties", {
+          description: error.message
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProperties();
+  }, []);
   
   // Parse query parameters on initial load
   useEffect(() => {
@@ -237,8 +158,11 @@ const PropertiesPage = () => {
         });
         break;
       case "newest":
-        // In a real app, you'd sort by date
-        // For now, we'll keep the original order
+        // In a real app, we sort by created_at which we now have
+        sorted = sorted.sort((a: any, b: any) => {
+          return new Date(b.created_at || Date.now()).getTime() - 
+                 new Date(a.created_at || Date.now()).getTime();
+        });
         break;
       default:
         break;
@@ -407,7 +331,12 @@ const PropertiesPage = () => {
           
           {/* Properties grid */}
           <div className="lg:w-3/4">
-            {filteredProperties.length === 0 ? (
+            {loading ? (
+              <div className="flex justify-center items-center py-20">
+                <Loader className="h-8 w-8 animate-spin text-naija-primary mr-2" />
+                <span>Loading properties...</span>
+              </div>
+            ) : filteredProperties.length === 0 ? (
               <div className="text-center py-16">
                 <h3 className="text-xl font-semibold mb-2">No properties found</h3>
                 <p className="text-gray-500 mb-4">Try adjusting your search filters</p>
