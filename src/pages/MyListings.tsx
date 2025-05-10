@@ -3,48 +3,13 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/components/ui/use-toast";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Plus, MoreHorizontal, Edit, Trash, Eye, MapPin, Bed, Loader } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Plus, Loader } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
-
-// Define Property type to match database structure
-interface Property {
-  id: number;
-  title: string;
-  location?: string;
-  price: string;
-  period: string;
-  image: string;
-  bedrooms: number;
-  status: string;
-  views?: number;
-  date?: string;
-  created_at: string;
-  state: string;
-  lga: string;
-  area?: string;
-}
+import ListingCard, { Property } from "@/components/listings/ListingCard";
+import StatusFilterButtons from "@/components/listings/StatusFilterButtons";
 
 const MyListings = () => {
   const { toast: uiToast } = useToast();
@@ -137,29 +102,6 @@ const MyListings = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case "active":
-        return "bg-green-500";
-      case "inactive":
-        return "bg-gray-500";
-      case "rented":
-        return "bg-blue-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-
-  // Format location string from state, lga, area
-  const formatLocation = (property: Property) => {
-    const parts = [
-      property.area,
-      property.lga,
-      property.state
-    ].filter(Boolean);
-    return parts.join(', ');
-  };
-
   if (loading) {
     return (
       <Layout>
@@ -208,38 +150,10 @@ const MyListings = () => {
           </div>
         </div>
 
-        <div className="mb-6">
-          <div className="flex space-x-2 overflow-x-auto pb-2">
-            <Button
-              variant={filter === "all" ? "default" : "outline"}
-              onClick={() => setFilter("all")}
-              className={filter === "all" ? "bg-naija-primary" : ""}
-            >
-              All
-            </Button>
-            <Button
-              variant={filter === "active" ? "default" : "outline"}
-              onClick={() => setFilter("active")}
-              className={filter === "active" ? "bg-green-500" : ""}
-            >
-              Active
-            </Button>
-            <Button
-              variant={filter === "inactive" ? "default" : "outline"}
-              onClick={() => setFilter("inactive")}
-              className={filter === "inactive" ? "bg-gray-500" : ""}
-            >
-              Inactive
-            </Button>
-            <Button
-              variant={filter === "rented" ? "default" : "outline"}
-              onClick={() => setFilter("rented")}
-              className={filter === "rented" ? "bg-blue-500" : ""}
-            >
-              Rented
-            </Button>
-          </div>
-        </div>
+        <StatusFilterButtons 
+          currentFilter={filter}
+          onFilterChange={setFilter}
+        />
 
         {filteredListings.length === 0 ? (
           <div className="text-center py-12 bg-gray-50 rounded-lg">
@@ -252,120 +166,12 @@ const MyListings = () => {
         ) : (
           <div className="grid gap-6">
             {filteredListings.map(listing => (
-              <Card key={listing.id} className="overflow-hidden">
-                <CardContent className="p-0">
-                  <div className="flex flex-col md:flex-row">
-                    <div className="md:w-1/4 h-48 md:h-auto">
-                      <img 
-                        src={listing.image} 
-                        alt={listing.title} 
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="md:w-3/4 p-4 md:p-6">
-                      <div className="flex flex-col md:flex-row justify-between">
-                        <div>
-                          <div className="flex items-center mb-2">
-                            <h3 className="text-xl font-semibold">{listing.title}</h3>
-                            <Badge className={`ml-2 ${getStatusColor(listing.status)}`}>
-                              {listing.status.charAt(0).toUpperCase() + listing.status.slice(1)}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center text-gray-600 mb-3">
-                            <MapPin className="h-4 w-4 mr-1" />
-                            <span>{formatLocation(listing)}</span>
-                          </div>
-                        </div>
-                        <div className="mt-2 md:mt-0">
-                          <span className="text-xl font-bold text-naija-dark">{listing.price}</span>
-                          <span className="text-gray-500 ml-1 text-sm">/ {listing.period}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap gap-4 my-4">
-                        <div className="flex items-center">
-                          <Bed className="h-4 w-4 text-gray-500 mr-1" />
-                          <span className="text-sm">{listing.bedrooms} Bedrooms</span>
-                        </div>
-                        <div className="flex items-center">
-                          <svg className="h-4 w-4 text-gray-500 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                          <span className="text-sm">{listing.views || 0} Views</span>
-                        </div>
-                        <div className="flex items-center">
-                          <svg className="h-4 w-4 text-gray-500 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2m-6 0h6m-6 0v10a2 2 0 002 2h2a2 2 0 002-2V7" />
-                          </svg>
-                          <span className="text-sm">Listed on {new Date(listing.created_at).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-between items-center pt-4 border-t">
-                        <div className="flex space-x-2">
-                          <Button variant="outline" size="sm">
-                            <Link to={`/property/${listing.id}`} className="flex items-center">
-                              <Eye className="mr-1 h-4 w-4" />
-                              View
-                            </Link>
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            <Link to={`/edit-property/${listing.id}`} className="flex items-center">
-                              <Edit className="mr-1 h-4 w-4" />
-                              Edit
-                            </Link>
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50">
-                                <Trash className="mr-1 h-4 w-4" />
-                                Delete
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will permanently delete this property listing. This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction 
-                                  onClick={() => handleDeleteListing(listing.id)}
-                                  className="bg-red-600 text-white hover:bg-red-700"
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleStatusUpdate(listing.id, "active")}>
-                              Mark as Active
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleStatusUpdate(listing.id, "inactive")}>
-                              Mark as Inactive
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleStatusUpdate(listing.id, "rented")}>
-                              Mark as Rented
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <ListingCard 
+                key={listing.id} 
+                property={listing}
+                onDelete={handleDeleteListing}
+                onStatusUpdate={handleStatusUpdate}
+              />
             ))}
           </div>
         )}

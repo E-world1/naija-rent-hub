@@ -11,6 +11,7 @@ import PropertyDetails from "./pages/PropertyDetails";
 import Login from "./pages/Login";
 import AddProperty from "./pages/AddProperty";
 import MyListings from "./pages/MyListings";
+import Agents from "./pages/Agents";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/properties" element={<PropertiesPage />} />
             <Route path="/property/:id" element={<PropertyDetails />} />
+            <Route path="/agents" element={<Agents />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Login />} />
             <Route path="/add-property" element={
