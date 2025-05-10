@@ -15,7 +15,7 @@ export interface Property {
   image: string;
   bedrooms: number;
   bathrooms?: number;
-  squareFeet?: number;
+  squareFeet?: string; // Changed from number to string to match data from database
   featured?: boolean;
   agent: string;
   type?: string;
