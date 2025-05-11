@@ -8,7 +8,7 @@ import { toast } from "sonner";
 interface AuthContextType {
   user: User | null;
   session: Session | null;
-  userType: "renter" | "agent" | null;
+  userType: "renter" | "agent" | "admin" | null;
   loading: boolean;
   signUp: (email: string, password: string, userData: any) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
@@ -20,7 +20,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [userType, setUserType] = useState<"renter" | "agent" | null>(null);
+  const [userType, setUserType] = useState<"renter" | "agent" | "admin" | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();
 

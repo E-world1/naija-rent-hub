@@ -4,8 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
   ChartContainer, 
-  ChartTooltip, 
-  ChartTooltipContent 
+  ChartTooltip
 } from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { formatDistanceToNow } from "date-fns";
@@ -208,12 +207,18 @@ const InvestmentDashboard = ({ investments, onRefresh }: InvestmentDashboardProp
                       tickFormatter={(value) => formatCurrency(value)}
                     />
                     <Tooltip 
-                      content={(props) => (
-                        <ChartTooltipContent 
-                          {...props} 
-                          formatter={(value) => formatCurrency(Number(value))}
-                        />
-                      )}
+                      content={(props) => {
+                        if (!props.active || !props.payload || props.payload.length === 0) {
+                          return null;
+                        }
+                        const data = props.payload[0].payload;
+                        return (
+                          <div className="bg-white p-2 border rounded shadow">
+                            <p className="text-gray-600">{`Date: ${props.label}`}</p>
+                            <p className="font-medium">{`Value: ${formatCurrency(data.value)}`}</p>
+                          </div>
+                        );
+                      }}
                     />
                     <Line 
                       type="monotone" 

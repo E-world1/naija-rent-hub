@@ -70,7 +70,7 @@ const App = () => (
                 <MyListings />
               </ProtectedRoute>
             } />
-            {/* New Investment Routes */}
+            {/* Investment Routes */}
             <Route path="/investments" element={
               <ProtectedRoute>
                 <InvestmentPortfolio />
