@@ -6,7 +6,7 @@ import ChatMessage from "./ChatMessage";
 import ChatInput from "./ChatInput";
 import CallButton from "./CallButton";
 import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { playSound } from "@/utils/soundEffects";
 
 interface Message {
   id: string;
@@ -98,6 +98,9 @@ const ChatContainer = () => {
     
     setSending(true);
     try {
+      // Play message sound effect
+      playSound('message');
+      
       const newMessage: Message = {
         id: Date.now().toString(),
         content,

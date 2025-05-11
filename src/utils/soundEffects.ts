@@ -29,7 +29,7 @@ export const playSound = (soundType: 'message' | 'call' | 'hangup') => {
 // Add a global type for the window.callTimerId property
 declare global {
   interface Window {
-    callTimerId?: number;
+    callTimerId?: ReturnType<typeof setTimeout>;
   }
 }
 

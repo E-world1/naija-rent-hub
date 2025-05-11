@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
+import { playSound } from "@/utils/soundEffects";
 
 interface CallButtonProps {
   recipientName: string;
@@ -24,6 +25,9 @@ const CallButton = ({ recipientName, recipientId }: CallButtonProps) => {
 
   const handleStartCall = () => {
     setIsCallActive(true);
+    // Play call sound effect
+    playSound('call');
+    
     toast({
       title: "Call started",
       description: `Connected with ${recipientName}`,
@@ -40,7 +44,13 @@ const CallButton = ({ recipientName, recipientId }: CallButtonProps) => {
 
   const handleEndCall = () => {
     setIsCallActive(false);
-    clearInterval(window.callTimerId);
+    // Play hangup sound effect
+    playSound('hangup');
+    
+    if (window.callTimerId) {
+      clearInterval(window.callTimerId);
+    }
+    
     toast({
       title: "Call ended",
       description: `Call duration: ${formatDuration(callDuration)}`,
