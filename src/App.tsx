@@ -19,6 +19,8 @@ import Messages from "./pages/Messages";
 import NewMessage from "./pages/NewMessage";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import InvestmentPortfolio from "./pages/InvestmentPortfolio";
+import AdminInvestments from "./pages/AdminInvestments";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +68,17 @@ const App = () => (
             <Route path="/my-listings" element={
               <ProtectedRoute requiredUserType="agent">
                 <MyListings />
+              </ProtectedRoute>
+            } />
+            {/* New Investment Routes */}
+            <Route path="/investments" element={
+              <ProtectedRoute>
+                <InvestmentPortfolio />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/investments" element={
+              <ProtectedRoute requiredUserType="admin">
+                <AdminInvestments />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />

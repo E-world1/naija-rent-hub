@@ -9,6 +9,47 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      investment_properties: {
+        Row: {
+          appreciation_model: string
+          appreciation_rate: number | null
+          created_at: string
+          current_value: number
+          id: number
+          initial_value: number
+          last_update_date: string
+          property_id: number | null
+        }
+        Insert: {
+          appreciation_model?: string
+          appreciation_rate?: number | null
+          created_at?: string
+          current_value: number
+          id?: number
+          initial_value: number
+          last_update_date?: string
+          property_id?: number | null
+        }
+        Update: {
+          appreciation_model?: string
+          appreciation_rate?: number | null
+          created_at?: string
+          current_value?: number
+          id?: number
+          initial_value?: number
+          last_update_date?: string
+          property_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investment_properties_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -113,6 +154,70 @@ export type Database = {
           views?: number | null
         }
         Relationships: []
+      }
+      property_value_history: {
+        Row: {
+          id: number
+          investment_property_id: number | null
+          property_value: number
+          value_date: string
+        }
+        Insert: {
+          id?: number
+          investment_property_id?: number | null
+          property_value: number
+          value_date?: string
+        }
+        Update: {
+          id?: number
+          investment_property_id?: number | null
+          property_value?: number
+          value_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_value_history_investment_property_id_fkey"
+            columns: ["investment_property_id"]
+            isOneToOne: false
+            referencedRelation: "investment_properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_investments: {
+        Row: {
+          id: number
+          investment_amount: number
+          investment_date: string
+          investment_property_id: number | null
+          shares: number
+          user_id: string | null
+        }
+        Insert: {
+          id?: number
+          investment_amount: number
+          investment_date?: string
+          investment_property_id?: number | null
+          shares: number
+          user_id?: string | null
+        }
+        Update: {
+          id?: number
+          investment_amount?: number
+          investment_date?: string
+          investment_property_id?: number | null
+          shares?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_investments_investment_property_id_fkey"
+            columns: ["investment_property_id"]
+            isOneToOne: false
+            referencedRelation: "investment_properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

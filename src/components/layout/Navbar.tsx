@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, User, Menu, X, MessageSquare } from "lucide-react";
+import { Search, User, Menu, X, MessageSquare, TrendingUp } from "lucide-react";
 import ShareButton from "@/components/sharing/ShareButton";
 import { useAuth } from "@/context/AuthContext";
 
@@ -40,6 +40,12 @@ const Navbar = () => {
               <Link to="/agents" className="px-3 py-2 text-gray-700 hover:text-naija-primary">
                 Agents
               </Link>
+              {user && (
+                <Link to="/investments" className="px-3 py-2 text-gray-700 hover:text-naija-primary flex items-center">
+                  <TrendingUp className="h-4 w-4 mr-1" />
+                  Investments
+                </Link>
+              )}
               <Link to="/about" className="px-3 py-2 text-gray-700 hover:text-naija-primary">
                 About
               </Link>
@@ -71,6 +77,11 @@ const Navbar = () => {
                   <DropdownMenuItem>
                     <Link to="/profile" className="w-full">Profile</Link>
                   </DropdownMenuItem>
+                  {userType === 'admin' && (
+                    <DropdownMenuItem>
+                      <Link to="/admin/investments" className="w-full">Manage Investments</Link>
+                    </DropdownMenuItem>
+                  )}
                   {userType === 'agent' && (
                     <DropdownMenuItem>
                       <Link to="/my-listings" className="w-full">My Listings</Link>
@@ -134,6 +145,16 @@ const Navbar = () => {
             >
               Agents
             </Link>
+            {user && (
+              <Link
+                to="/investments"
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-naija-primary flex items-center"
+                onClick={() => setIsOpen(false)}
+              >
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Investments
+              </Link>
+            )}
             <Link
               to="/about"
               className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-naija-primary"
@@ -167,6 +188,15 @@ const Navbar = () => {
                 >
                   Profile
                 </Link>
+                {userType === 'admin' && (
+                  <Link
+                    to="/admin/investments"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-naija-primary"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Manage Investments
+                  </Link>
+                )}
                 {userType === 'agent' && (
                   <Link
                     to="/my-listings"
