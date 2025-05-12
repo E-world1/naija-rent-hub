@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { 
   ChartContainer, 
   ChartTooltip
@@ -9,7 +10,18 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { formatDistanceToNow } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader } from "lucide-react";
+import { Loader, TrendingUp } from "lucide-react";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface InvestmentDashboardProps {
   investments: any[];
@@ -21,6 +33,9 @@ const InvestmentDashboard = ({ investments, onRefresh }: InvestmentDashboardProp
   const [totalGains, setTotalGains] = useState<number>(0);
   const [performanceData, setPerformanceData] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState<boolean>(false);
+  const [isSelling, setIsSelling] = useState<boolean>(false);
+  const [selectedInvestment, setSelectedInvestment] = useState<any>(null);
+  const [showSellDialog, setShowSellDialog] = useState<boolean>(false);
 
   useEffect(() => {
     calculatePortfolioMetrics();
@@ -125,6 +140,47 @@ const InvestmentDashboard = ({ investments, onRefresh }: InvestmentDashboardProp
     const current = investment.investment_property?.current_value * investment.shares;
     if (initial === 0) return 0;
     return ((current - initial) / initial) * 100;
+  };
+
+  // Handle selling an investment
+  const handleSellInvestment = async () => {
+    if (!selectedInvestment) return;
+    
+    try {
+      setIsSelling(true);
+      
+      // Calculate current value of the investment
+      const currentValue = selectedInvestment.investment_property.current_value * selectedInvestment.shares;
+      
+      // Delete the investment
+      const { error } = await supabase
+        .from('user_investments')
+        .delete()
+        .eq('id', selectedInvestment.id);
+      
+      if (error) throw error;
+      
+      // Show success message with the sold amount
+      toast.success("Investment sold successfully!", {
+        description: `You've sold your investment for ${formatCurrency(currentValue)}`
+      });
+      
+      // Refresh the investment data
+      onRefresh();
+    } catch (error: any) {
+      toast.error("Failed to sell investment", {
+        description: error.message
+      });
+    } finally {
+      setIsSelling(false);
+      setShowSellDialog(false);
+      setSelectedInvestment(null);
+    }
+  };
+
+  const openSellDialog = (investment: any) => {
+    setSelectedInvestment(investment);
+    setShowSellDialog(true);
   };
 
   return (
@@ -284,12 +340,19 @@ const InvestmentDashboard = ({ investments, onRefresh }: InvestmentDashboardProp
                     </div>
                   </div>
 
-                  <div className="mt-2">
+                  <div className="mt-2 flex justify-between items-center">
                     <Badge variant={investment.investment_property.appreciation_model === 'fixed' ? 'outline' : 'secondary'}>
                       {investment.investment_property.appreciation_model === 'fixed' 
                         ? `${investment.investment_property.appreciation_rate}% fixed appreciation` 
                         : 'Manual appreciation'}
                     </Badge>
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      onClick={() => openSellDialog(investment)}
+                    >
+                      Sell Investment
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -304,6 +367,60 @@ const InvestmentDashboard = ({ investments, onRefresh }: InvestmentDashboardProp
           </p>
         </div>
       )}
+      
+      {/* Sell Investment Confirmation Dialog */}
+      <AlertDialog open={showSellDialog} onOpenChange={setShowSellDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sell Investment</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to sell your investment in{" "}
+              <span className="font-semibold">
+                {selectedInvestment?.investment_property?.property?.title || "this property"}
+              </span>?
+              <div className="mt-4 p-3 bg-gray-50 rounded-md">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <p className="text-xs text-gray-500">Initial Investment</p>
+                    <p className="font-medium">
+                      {selectedInvestment && formatCurrency(selectedInvestment.investment_amount)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Current Value</p>
+                    <p className="font-medium text-green-600">
+                      {selectedInvestment && formatCurrency(selectedInvestment.investment_property?.current_value * selectedInvestment.shares)}
+                    </p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-xs text-gray-500">Profit/Loss</p>
+                    <p className={`font-medium ${selectedInvestment && (selectedInvestment.investment_property?.current_value * selectedInvestment.shares - selectedInvestment.investment_amount) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {selectedInvestment && formatCurrency(selectedInvestment.investment_property?.current_value * selectedInvestment.shares - selectedInvestment.investment_amount)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleSellInvestment}
+              disabled={isSelling}
+            >
+              {isSelling ? (
+                <>
+                  <Loader className="h-4 w-4 mr-2 animate-spin" />
+                  Selling...
+                </>
+              ) : (
+                'Sell Investment'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
