@@ -97,8 +97,11 @@ const InvestmentOpportunities = ({ opportunities, onInvestmentMade }: Investment
       
       if (error) throw error;
       
+      // Get property title safely for the toast message
+      const propertyTitle = selectedProperty.property?.title || 'this property';
+      
       toast.success("Investment successful!", {
-        description: `You've invested ${formatCurrency(amount)} in ${selectedProperty.property.title}`
+        description: `You've invested ${formatCurrency(amount)} in ${propertyTitle}`
       });
       
       setIsDialogOpen(false);
@@ -133,7 +136,7 @@ const InvestmentOpportunities = ({ opportunities, onInvestmentMade }: Investment
               <div className="relative h-48 overflow-hidden">
                 <img 
                   src={opportunity.property?.image || "https://placehold.co/600x400?text=Property"} 
-                  alt={opportunity.property?.title} 
+                  alt={opportunity.property?.title || "Investment Property"} 
                   className="w-full h-full object-cover"
                 />
                 {opportunity.appreciation_model === 'fixed' && (
@@ -147,8 +150,8 @@ const InvestmentOpportunities = ({ opportunities, onInvestmentMade }: Investment
               </div>
               
               <CardContent className="p-4">
-                <h3 className="text-lg font-semibold mb-2">{opportunity.property?.title}</h3>
-                <p className="text-gray-500 text-sm mb-3">{opportunity.property?.location}</p>
+                <h3 className="text-lg font-semibold mb-2">{opportunity.property?.title || "Unnamed Property"}</h3>
+                <p className="text-gray-500 text-sm mb-3">{opportunity.property?.location || "Unknown Location"}</p>
                 
                 <div className="flex justify-between items-center mb-4">
                   <div>
@@ -183,7 +186,7 @@ const InvestmentOpportunities = ({ opportunities, onInvestmentMade }: Investment
           <DialogHeader>
             <DialogTitle>Invest in Property</DialogTitle>
             <DialogDescription>
-              {selectedProperty?.property?.title}
+              {selectedProperty?.property?.title || "Investment Property"}
             </DialogDescription>
           </DialogHeader>
           
@@ -195,7 +198,7 @@ const InvestmentOpportunities = ({ opportunities, onInvestmentMade }: Investment
               </div>
               <div>
                 <p className="text-xs text-gray-500">Appreciation Model</p>
-                <p className="font-medium capitalize">{selectedProperty?.appreciation_model}</p>
+                <p className="font-medium capitalize">{selectedProperty?.appreciation_model || 'N/A'}</p>
                 {selectedProperty?.appreciation_model === 'fixed' && (
                   <p className="text-xs text-green-600">{selectedProperty.appreciation_rate}% rate</p>
                 )}
