@@ -1,6 +1,4 @@
-
 import { useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
 import { toast } from "sonner";
 import Layout from "@/components/layout/Layout";
 import { supabase } from "@/integrations/supabase/client";
@@ -68,7 +66,7 @@ const updateValueSchema = z.object({
 });
 
 const AdminInvestments = () => {
-  const { user, userType } = useAuth();
+  const { user, userType, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [investmentProperties, setInvestmentProperties] = useState<any[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -97,12 +95,19 @@ const AdminInvestments = () => {
   const watchAppreciationModel = form.watch("appreciation_model");
 
   useEffect(() => {
-    if (user) {
+    if (user && !authLoading) {
       fetchInvestmentProperties();
+    } else if (!authLoading) {
+      setLoading(false);
     }
-  }, [user]);
+  }, [user, authLoading]);
 
   const fetchInvestmentProperties = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       
@@ -114,12 +119,17 @@ const AdminInvestments = () => {
         `)
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching investment properties:', error);
+        throw error;
+      }
       
+      console.log('Investment properties fetched:', data?.length || 0);
       setInvestmentProperties(data || []);
     } catch (error: any) {
+      console.error('Error loading investment properties:', error);
       toast.error("Failed to load investment properties", {
-        description: error.message
+        description: error.message || 'An unexpected error occurred'
       });
     } finally {
       setLoading(false);
@@ -143,13 +153,19 @@ const AdminInvestments = () => {
         appreciation_rate: data.appreciation_model === 'fixed' ? parseFloat(data.appreciation_rate || "0") : null,
       };
       
+      console.log('Creating investment property:', newInvestmentProperty);
+      
       const { data: createdProperty, error } = await supabase
         .from('investment_properties')
         .insert([newInvestmentProperty])
         .select();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating investment property:', error);
+        throw error;
+      }
       
+      console.log('Investment property created successfully:', createdProperty);
       toast.success("Investment property created successfully");
       setIsAddDialogOpen(false);
       fetchInvestmentProperties();
@@ -163,8 +179,9 @@ const AdminInvestments = () => {
         appreciation_rate: "5",
       });
     } catch (error: any) {
+      console.error('Error creating investment property:', error);
       toast.error("Failed to create investment property", {
-        description: error.message
+        description: error.message || 'An unexpected error occurred'
       });
     } finally {
       setIsSubmitting(false);
@@ -185,8 +202,12 @@ const AdminInvestments = () => {
         })
         .eq('id', selectedProperty.id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating property value:', error);
+        throw error;
+      }
       
+      console.log('Property value updated successfully');
       toast.success("Property value updated successfully");
       setIsUpdateDialogOpen(false);
       fetchInvestmentProperties();
@@ -194,8 +215,9 @@ const AdminInvestments = () => {
       // Reset form
       updateForm.reset();
     } catch (error: any) {
+      console.error('Error updating property value:', error);
       toast.error("Failed to update property value", {
-        description: error.message
+        description: error.message || 'An unexpected error occurred'
       });
     } finally {
       setIsSubmitting(false);
@@ -208,25 +230,33 @@ const AdminInvestments = () => {
     }
     
     try {
+      console.log('Deleting investment property:', id);
+      
       const { error } = await supabase
         .from('investment_properties')
         .delete()
         .eq('id', id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting investment property:', error);
+        throw error;
+      }
       
+      console.log('Investment property deleted successfully');
       toast.success("Investment property deleted successfully");
       fetchInvestmentProperties();
     } catch (error: any) {
+      console.error('Error deleting investment property:', error);
       toast.error("Failed to delete investment property", {
-        description: error.message
+        description: error.message || 'An unexpected error occurred'
       });
     }
   };
 
   const openUpdateDialog = (property: any) => {
+    if (!property) return;
     setSelectedProperty(property);
-    updateForm.setValue("current_value", property.current_value.toString());
+    updateForm.setValue("current_value", property.current_value?.toString() || "0");
     setIsUpdateDialogOpen(true);
   };
 
@@ -237,8 +267,30 @@ const AdminInvestments = () => {
       currency: 'NGN',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
-    }).format(value);
+    }).format(value || 0);
   };
+
+  if (authLoading) {
+    return (
+      <Layout>
+        <div className="flex justify-center items-center py-20">
+          <Loader className="h-8 w-8 animate-spin text-naija-primary mr-2" />
+          <span>Loading...</span>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-20 text-center">
+          <h1 className="text-3xl font-bold mb-4">Access Denied</h1>
+          <p>Please log in to access this page.</p>
+        </div>
+      </Layout>
+    );
+  }
 
   if (userType !== 'admin') {
     return (
@@ -295,13 +347,13 @@ const AdminInvestments = () => {
                           <div className="h-10 w-10 flex-shrink-0 mr-3">
                             <img 
                               src={property.property?.image || "https://placehold.co/600x400?text=Property"} 
-                              alt={property.property?.title} 
+                              alt={property.property?.title || "Property"} 
                               className="h-10 w-10 rounded-full object-cover"
                             />
                           </div>
                           <div>
-                            <p className="font-medium">{property.property?.title}</p>
-                            <p className="text-xs text-gray-500">{property.property?.location}</p>
+                            <p className="font-medium">{property.property?.title || "Unknown Property"}</p>
+                            <p className="text-xs text-gray-500">{property.property?.location || "Unknown Location"}</p>
                           </div>
                         </div>
                       </TableCell>
@@ -316,7 +368,10 @@ const AdminInvestments = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {new Date(property.last_update_date).toLocaleDateString()}
+                        {property.last_update_date 
+                          ? new Date(property.last_update_date).toLocaleDateString()
+                          : "Unknown"
+                        }
                       </TableCell>
                       <TableCell className="text-right">
                         <Button 
@@ -482,7 +537,7 @@ const AdminInvestments = () => {
             <DialogHeader>
               <DialogTitle>Update Property Value</DialogTitle>
               <DialogDescription>
-                {selectedProperty?.property?.title}
+                {selectedProperty?.property?.title || "Update property value"}
               </DialogDescription>
             </DialogHeader>
             

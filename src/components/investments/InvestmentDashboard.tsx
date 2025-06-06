@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,37 +37,65 @@ const InvestmentDashboard = ({ investments, onRefresh }: InvestmentDashboardProp
   const [showSellDialog, setShowSellDialog] = useState<boolean>(false);
 
   useEffect(() => {
-    calculatePortfolioMetrics();
-    if (investments.length > 0) {
+    if (investments && investments.length > 0) {
+      calculatePortfolioMetrics();
       fetchHistoricalData();
+    } else {
+      // Reset values when no investments
+      setPortfolioValue(0);
+      setTotalGains(0);
+      setPerformanceData([]);
     }
   }, [investments]);
 
   const calculatePortfolioMetrics = () => {
-    let currentValue = 0;
-    let initialValue = 0;
+    try {
+      let currentValue = 0;
+      let initialValue = 0;
 
-    investments.forEach(investment => {
-      const currentPropertyValue = investment.investment_property?.current_value || 0;
-      const investmentPercentage = investment.shares;
-      
-      // Calculate the portion of the property's value that belongs to this investment
-      const investmentCurrentValue = currentPropertyValue * investmentPercentage;
-      currentValue += investmentCurrentValue;
-      
-      // Calculate original investment
-      initialValue += investment.investment_amount;
-    });
+      investments.forEach(investment => {
+        if (!investment || !investment.investment_property) {
+          console.warn('Invalid investment data:', investment);
+          return;
+        }
 
-    setPortfolioValue(currentValue);
-    setTotalGains(currentValue - initialValue);
+        const currentPropertyValue = investment.investment_property?.current_value || 0;
+        const investmentPercentage = investment.shares || 0;
+        
+        // Calculate the portion of the property's value that belongs to this investment
+        const investmentCurrentValue = currentPropertyValue * investmentPercentage;
+        currentValue += investmentCurrentValue;
+        
+        // Calculate original investment
+        initialValue += investment.investment_amount || 0;
+      });
+
+      setPortfolioValue(currentValue);
+      setTotalGains(currentValue - initialValue);
+    } catch (error) {
+      console.error('Error calculating portfolio metrics:', error);
+      toast.error('Error calculating portfolio metrics');
+    }
   };
 
   const fetchHistoricalData = async () => {
     try {
       setLoadingHistory(true);
+      
+      if (!investments || investments.length === 0) {
+        setPerformanceData([]);
+        return;
+      }
+
       // Get all investment property IDs
-      const propertyIds = investments.map(inv => inv.investment_property_id);
+      const propertyIds = investments
+        .map(inv => inv?.investment_property_id)
+        .filter(id => id != null);
+      
+      if (propertyIds.length === 0) {
+        setPerformanceData([]);
+        return;
+      }
       
       // Fetch the historical value data for these properties
       const { data, error } = await supabase
@@ -77,51 +104,66 @@ const InvestmentDashboard = ({ investments, onRefresh }: InvestmentDashboardProp
         .in('investment_property_id', propertyIds)
         .order('value_date', { ascending: true });
         
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching historical data:', error);
+        toast.error('Failed to load historical data');
+        return;
+      }
       
       // Process the historical data to create chart data
-      // Group by month and sum values
       const processedData = processHistoricalData(data || [], investments);
       setPerformanceData(processedData);
     } catch (error) {
       console.error("Error fetching historical data:", error);
+      toast.error('Failed to load historical data');
     } finally {
       setLoadingHistory(false);
     }
   };
 
   const processHistoricalData = (historyData: any[], userInvestments: any[]) => {
-    // Create a map of investments by property ID for easy lookup
-    const investmentsByProperty = new Map();
-    userInvestments.forEach(inv => {
-      investmentsByProperty.set(inv.investment_property_id, inv);
-    });
+    try {
+      // Create a map of investments by property ID for easy lookup
+      const investmentsByProperty = new Map();
+      userInvestments.forEach(inv => {
+        if (inv?.investment_property_id && inv?.shares) {
+          investmentsByProperty.set(inv.investment_property_id, inv);
+        }
+      });
 
-    // Process each history record
-    const dataByMonth: Record<string, { date: string, value: number }> = {};
-    
-    historyData.forEach(record => {
-      // Get the investment for this property
-      const investment = investmentsByProperty.get(record.investment_property_id);
-      if (!investment) return;
+      // Process each history record
+      const dataByMonth: Record<string, { date: string, value: number }> = {};
       
-      // Calculate the invested portion
-      const value = record.property_value * investment.shares;
+      historyData.forEach(record => {
+        if (!record?.investment_property_id || !record?.property_value) {
+          return;
+        }
+
+        // Get the investment for this property
+        const investment = investmentsByProperty.get(record.investment_property_id);
+        if (!investment) return;
+        
+        // Calculate the invested portion
+        const value = record.property_value * investment.shares;
+        
+        // Format date to YYYY-MM
+        const date = new Date(record.value_date);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        
+        if (!dataByMonth[monthKey]) {
+          dataByMonth[monthKey] = { date: monthKey, value: 0 };
+        }
+        
+        // Accumulate value for this month
+        dataByMonth[monthKey].value += value;
+      });
       
-      // Format date to YYYY-MM
-      const date = new Date(record.value_date);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      
-      if (!dataByMonth[monthKey]) {
-        dataByMonth[monthKey] = { date: monthKey, value: 0 };
-      }
-      
-      // Accumulate value for this month
-      dataByMonth[monthKey].value += value;
-    });
-    
-    // Convert to array and sort by date
-    return Object.values(dataByMonth).sort((a, b) => a.date.localeCompare(b.date));
+      // Convert to array and sort by date
+      return Object.values(dataByMonth).sort((a, b) => a.date.localeCompare(b.date));
+    } catch (error) {
+      console.error('Error processing historical data:', error);
+      return [];
+    }
   };
 
   // Format currency for display
@@ -131,15 +173,24 @@ const InvestmentDashboard = ({ investments, onRefresh }: InvestmentDashboardProp
       currency: 'NGN',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
-    }).format(value);
+    }).format(value || 0);
   };
 
   // Calculate ROI as percentage
   const calculateROI = (investment: any) => {
-    const initial = investment.investment_amount;
-    const current = investment.investment_property?.current_value * investment.shares;
-    if (initial === 0) return 0;
-    return ((current - initial) / initial) * 100;
+    try {
+      if (!investment || !investment.investment_property || !investment.investment_amount) {
+        return 0;
+      }
+
+      const initial = investment.investment_amount;
+      const current = investment.investment_property.current_value * investment.shares;
+      if (initial === 0) return 0;
+      return ((current - initial) / initial) * 100;
+    } catch (error) {
+      console.error('Error calculating ROI:', error);
+      return 0;
+    }
   };
 
   // Handle selling an investment
@@ -150,7 +201,7 @@ const InvestmentDashboard = ({ investments, onRefresh }: InvestmentDashboardProp
       setIsSelling(true);
       
       // Calculate current value of the investment
-      const currentValue = selectedInvestment.investment_property.current_value * selectedInvestment.shares;
+      const currentValue = (selectedInvestment.investment_property?.current_value || 0) * (selectedInvestment.shares || 0);
       
       // Delete the investment
       const { error } = await supabase
@@ -158,7 +209,10 @@ const InvestmentDashboard = ({ investments, onRefresh }: InvestmentDashboardProp
         .delete()
         .eq('id', selectedInvestment.id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error selling investment:', error);
+        throw error;
+      }
       
       // Show success message with the sold amount
       toast.success("Investment sold successfully!", {
@@ -168,8 +222,9 @@ const InvestmentDashboard = ({ investments, onRefresh }: InvestmentDashboardProp
       // Refresh the investment data
       onRefresh();
     } catch (error: any) {
+      console.error('Error selling investment:', error);
       toast.error("Failed to sell investment", {
-        description: error.message
+        description: error.message || 'An unexpected error occurred'
       });
     } finally {
       setIsSelling(false);
@@ -179,6 +234,7 @@ const InvestmentDashboard = ({ investments, onRefresh }: InvestmentDashboardProp
   };
 
   const openSellDialog = (investment: any) => {
+    if (!investment) return;
     setSelectedInvestment(investment);
     setShowSellDialog(true);
   };
@@ -221,7 +277,7 @@ const InvestmentDashboard = ({ investments, onRefresh }: InvestmentDashboardProp
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {investments.length}
+              {investments?.length || 0}
             </div>
           </CardContent>
         </Card>
@@ -243,7 +299,7 @@ const InvestmentDashboard = ({ investments, onRefresh }: InvestmentDashboardProp
                 config={{
                   value: {
                     theme: {
-                      light: "#16A34A", // Green for positive values
+                      light: "#16A34A",
                       dark: "#16A34A"
                     }
                   }
@@ -298,65 +354,78 @@ const InvestmentDashboard = ({ investments, onRefresh }: InvestmentDashboardProp
       </Card>
 
       {/* Investment Details */}
-      {investments.length > 0 ? (
+      {investments && investments.length > 0 ? (
         <div>
           <h3 className="text-xl font-semibold mb-4">My Investments</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {investments.map(investment => (
-              <Card key={investment.id} className="overflow-hidden">
-                <div className="h-40 overflow-hidden">
-                  <img 
-                    src={investment.investment_property?.property?.image || "https://placehold.co/600x400?text=Property"} 
-                    alt={investment.investment_property?.property?.title} 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <CardContent className="p-4">
-                  <h4 className="font-semibold text-lg mb-1">{investment.investment_property?.property?.title}</h4>
-                  <p className="text-gray-500 text-sm mb-3">{investment.investment_property?.property?.location}</p>
-                  
-                  <div className="grid grid-cols-2 gap-2 mb-4">
-                    <div>
-                      <p className="text-xs text-gray-500">Initial Investment</p>
-                      <p className="font-medium">{formatCurrency(investment.investment_amount)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Current Value</p>
-                      <p className="font-medium">
-                        {formatCurrency(investment.investment_property?.current_value * investment.shares)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">ROI</p>
-                      <p className={`font-medium ${calculateROI(investment) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {calculateROI(investment).toFixed(2)}%
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Invested</p>
-                      <p className="font-medium">
-                        {formatDistanceToNow(new Date(investment.investment_date), { addSuffix: true })}
-                      </p>
-                    </div>
+            {investments.map(investment => {
+              if (!investment || !investment.investment_property) {
+                return null;
+              }
+              
+              return (
+                <Card key={investment.id} className="overflow-hidden">
+                  <div className="h-40 overflow-hidden">
+                    <img 
+                      src={investment.investment_property?.property?.image || "https://placehold.co/600x400?text=Property"} 
+                      alt={investment.investment_property?.property?.title || "Property"} 
+                      className="w-full h-full object-cover"
+                    />
                   </div>
+                  <CardContent className="p-4">
+                    <h4 className="font-semibold text-lg mb-1">
+                      {investment.investment_property?.property?.title || "Unknown Property"}
+                    </h4>
+                    <p className="text-gray-500 text-sm mb-3">
+                      {investment.investment_property?.property?.location || "Unknown Location"}
+                    </p>
+                    
+                    <div className="grid grid-cols-2 gap-2 mb-4">
+                      <div>
+                        <p className="text-xs text-gray-500">Initial Investment</p>
+                        <p className="font-medium">{formatCurrency(investment.investment_amount || 0)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Current Value</p>
+                        <p className="font-medium">
+                          {formatCurrency((investment.investment_property?.current_value || 0) * (investment.shares || 0))}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">ROI</p>
+                        <p className={`font-medium ${calculateROI(investment) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {calculateROI(investment).toFixed(2)}%
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Invested</p>
+                        <p className="font-medium">
+                          {investment.investment_date 
+                            ? formatDistanceToNow(new Date(investment.investment_date), { addSuffix: true })
+                            : "Unknown"
+                          }
+                        </p>
+                      </div>
+                    </div>
 
-                  <div className="mt-2 flex justify-between items-center">
-                    <Badge variant={investment.investment_property.appreciation_model === 'fixed' ? 'outline' : 'secondary'}>
-                      {investment.investment_property.appreciation_model === 'fixed' 
-                        ? `${investment.investment_property.appreciation_rate}% fixed appreciation` 
-                        : 'Manual appreciation'}
-                    </Badge>
-                    <Button 
-                      variant="destructive" 
-                      size="sm" 
-                      onClick={() => openSellDialog(investment)}
-                    >
-                      Sell Investment
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    <div className="mt-2 flex justify-between items-center">
+                      <Badge variant={investment.investment_property.appreciation_model === 'fixed' ? 'outline' : 'secondary'}>
+                        {investment.investment_property.appreciation_model === 'fixed' 
+                          ? `${investment.investment_property.appreciation_rate || 0}% fixed appreciation` 
+                          : 'Manual appreciation'}
+                      </Badge>
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        onClick={() => openSellDialog(investment)}
+                      >
+                        Sell Investment
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       ) : (
@@ -383,19 +452,26 @@ const InvestmentDashboard = ({ investments, onRefresh }: InvestmentDashboardProp
                   <div>
                     <p className="text-xs text-gray-500">Initial Investment</p>
                     <p className="font-medium">
-                      {selectedInvestment && formatCurrency(selectedInvestment.investment_amount)}
+                      {selectedInvestment && formatCurrency(selectedInvestment.investment_amount || 0)}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">Current Value</p>
                     <p className="font-medium text-green-600">
-                      {selectedInvestment && formatCurrency(selectedInvestment.investment_property?.current_value * selectedInvestment.shares)}
+                      {selectedInvestment && formatCurrency(
+                        (selectedInvestment.investment_property?.current_value || 0) * (selectedInvestment.shares || 0)
+                      )}
                     </p>
                   </div>
                   <div className="col-span-2">
                     <p className="text-xs text-gray-500">Profit/Loss</p>
-                    <p className={`font-medium ${selectedInvestment && (selectedInvestment.investment_property?.current_value * selectedInvestment.shares - selectedInvestment.investment_amount) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {selectedInvestment && formatCurrency(selectedInvestment.investment_property?.current_value * selectedInvestment.shares - selectedInvestment.investment_amount)}
+                    <p className={`font-medium ${selectedInvestment && 
+                      ((selectedInvestment.investment_property?.current_value || 0) * (selectedInvestment.shares || 0) - 
+                       (selectedInvestment.investment_amount || 0)) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {selectedInvestment && formatCurrency(
+                        (selectedInvestment.investment_property?.current_value || 0) * (selectedInvestment.shares || 0) - 
+                        (selectedInvestment.investment_amount || 0)
+                      )}
                     </p>
                   </div>
                 </div>
