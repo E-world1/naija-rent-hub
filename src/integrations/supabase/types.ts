@@ -71,6 +71,7 @@ export type Database = {
           initial_value: number
           last_update_date: string
           property_id: number | null
+          updated_at: string
         }
         Insert: {
           appreciation_model?: string
@@ -81,6 +82,7 @@ export type Database = {
           initial_value: number
           last_update_date?: string
           property_id?: number | null
+          updated_at?: string
         }
         Update: {
           appreciation_model?: string
@@ -91,6 +93,7 @@ export type Database = {
           initial_value?: number
           last_update_date?: string
           property_id?: number | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -146,7 +149,6 @@ export type Database = {
       }
       profiles: {
         Row: {
-          avatar_url: string | null
           created_at: string
           first_name: string | null
           id: string
@@ -156,7 +158,6 @@ export type Database = {
           user_type: string
         }
         Insert: {
-          avatar_url?: string | null
           created_at?: string
           first_name?: string | null
           id: string
@@ -166,7 +167,6 @@ export type Database = {
           user_type?: string
         }
         Update: {
-          avatar_url?: string | null
           created_at?: string
           first_name?: string | null
           id?: string
@@ -179,73 +179,55 @@ export type Database = {
       }
       properties: {
         Row: {
-          address: string | null
           agent_id: string | null
-          area: string | null
+          amenities: string[] | null
           bathrooms: number | null
           bedrooms: number | null
           created_at: string
           description: string | null
-          features: string[] | null
           id: number
           image: string | null
-          images: string[] | null
-          lga: string
-          period: string | null
-          price: string
-          square_feet: string | null
-          state: string
+          location: string
+          price: number
+          size_sqft: number | null
           status: string | null
           title: string
-          type: string | null
+          type: string
           updated_at: string
-          views: number | null
         }
         Insert: {
-          address?: string | null
           agent_id?: string | null
-          area?: string | null
+          amenities?: string[] | null
           bathrooms?: number | null
           bedrooms?: number | null
           created_at?: string
           description?: string | null
-          features?: string[] | null
           id?: number
           image?: string | null
-          images?: string[] | null
-          lga: string
-          period?: string | null
-          price: string
-          square_feet?: string | null
-          state: string
+          location: string
+          price: number
+          size_sqft?: number | null
           status?: string | null
           title: string
-          type?: string | null
+          type: string
           updated_at?: string
-          views?: number | null
         }
         Update: {
-          address?: string | null
           agent_id?: string | null
-          area?: string | null
+          amenities?: string[] | null
           bathrooms?: number | null
           bedrooms?: number | null
           created_at?: string
           description?: string | null
-          features?: string[] | null
           id?: number
           image?: string | null
-          images?: string[] | null
-          lga?: string
-          period?: string | null
-          price?: string
-          square_feet?: string | null
-          state?: string
+          location?: string
+          price?: number
+          size_sqft?: number | null
           status?: string | null
           title?: string
-          type?: string | null
+          type?: string
           updated_at?: string
-          views?: number | null
         }
         Relationships: [
           {
@@ -259,18 +241,21 @@ export type Database = {
       }
       property_value_history: {
         Row: {
+          created_at: string
           id: number
           investment_property_id: number | null
           property_value: number
           value_date: string
         }
         Insert: {
+          created_at?: string
           id?: number
           investment_property_id?: number | null
           property_value: number
           value_date?: string
         }
         Update: {
+          created_at?: string
           id?: number
           investment_property_id?: number | null
           property_value?: number
@@ -288,6 +273,7 @@ export type Database = {
       }
       user_investments: {
         Row: {
+          created_at: string
           id: number
           investment_amount: number
           investment_date: string
@@ -296,6 +282,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          created_at?: string
           id?: number
           investment_amount: number
           investment_date?: string
@@ -304,6 +291,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          created_at?: string
           id?: number
           investment_amount?: number
           investment_date?: string

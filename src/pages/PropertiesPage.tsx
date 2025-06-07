@@ -46,7 +46,7 @@ const PropertiesPage = () => {
           image: item.image,
           bedrooms: item.bedrooms,
           bathrooms: item.bathrooms || undefined,
-          squareFeet: item.square_feet || undefined,
+          squareFeet: item.square_feet || undefined, // Leave as string to match Property interface
           featured: false, // Could be added as a column in the future
           agent: "Agent", // This should be fetched from profiles in a real implementation
           type: item.type || undefined,

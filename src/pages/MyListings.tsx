@@ -2,104 +2,73 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
-import ListingCard from "@/components/listings/ListingCard";
-import StatusFilterButtons from "@/components/listings/StatusFilterButtons";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { Plus, Loader } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
-
-interface Property {
-  id: number;
-  title: string;
-  description: string | null;
-  type: string | null;
-  price: string;
-  period: string | null;
-  bedrooms: number | null;
-  bathrooms: number | null;
-  square_feet: string | null;
-  state: string;
-  lga: string;
-  area: string | null;
-  address: string | null;
-  features: string[] | null;
-  image: string | null;
-  images: string[] | null;
-  agent_id: string | null;
-  status: string | null;
-  views: number | null;
-  created_at: string;
-  updated_at: string;
-}
+import ListingCard, { Property } from "@/components/listings/ListingCard";
+import StatusFilterButtons from "@/components/listings/StatusFilterButtons";
 
 const MyListings = () => {
+  const { toast: uiToast } = useToast();
   const { user } = useAuth();
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
-  const [activeFilter, setActiveFilter] = useState("all");
+  const [listings, setListings] = useState<Property[]>([]);
+  const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  // Fetch listings from Supabase
   useEffect(() => {
-    if (user) {
-      fetchProperties();
-    }
+    const fetchListings = async () => {
+      if (!user) return;
+      
+      try {
+        setLoading(true);
+        
+        const { data, error } = await supabase
+          .from('properties')
+          .select('*')
+          .eq('agent_id', user.id);
+        
+        if (error) throw error;
+        
+        console.log("Fetched properties:", data);
+        setListings(data || []);
+      } catch (error: any) {
+        console.error("Error fetching listings:", error);
+        setError(error.message);
+        toast.error("Error loading properties", {
+          description: error.message
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchListings();
   }, [user]);
 
-  const fetchProperties = async () => {
-    if (!user) return;
+  const filteredListings = filter === "all" 
+    ? listings 
+    : listings.filter(listing => listing.status === filter);
 
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('properties')
-        .select('*')
-        .eq('agent_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      setProperties(data || []);
-      setFilteredProperties(data || []);
-    } catch (error: any) {
-      console.error("Error fetching properties:", error);
-      toast.error("Error loading properties", {
-        description: error.message
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleFilterChange = (filter: string) => {
-    setActiveFilter(filter);
-    
-    if (filter === "all") {
-      setFilteredProperties(properties);
-    } else {
-      const filtered = properties.filter(property => property.status === filter);
-      setFilteredProperties(filtered);
-    }
-  };
-
-  const handleDeleteProperty = async (propertyId: number) => {
+  const handleDeleteListing = async (id: number) => {
     try {
       const { error } = await supabase
         .from('properties')
         .delete()
-        .eq('id', propertyId);
-
+        .eq('id', id);
+      
       if (error) throw error;
-
-      // Remove from local state
-      const updatedProperties = properties.filter(p => p.id !== propertyId);
-      setProperties(updatedProperties);
-      setFilteredProperties(updatedProperties.filter(property => 
-        activeFilter === "all" || property.status === activeFilter
-      ));
-
-      toast.success("Property deleted successfully");
+      
+      setListings(listings.filter(listing => listing.id !== id));
+      
+      uiToast({
+        title: "Property Deleted",
+        description: "The property has been removed from your listings.",
+      });
     } catch (error: any) {
       console.error("Error deleting property:", error);
       toast.error("Error deleting property", {
@@ -108,28 +77,26 @@ const MyListings = () => {
     }
   };
 
-  const handleStatusChange = async (propertyId: number, newStatus: string) => {
+  const handleStatusUpdate = async (id: number, newStatus: string) => {
     try {
       const { error } = await supabase
         .from('properties')
         .update({ status: newStatus })
-        .eq('id', propertyId);
-
+        .eq('id', id);
+      
       if (error) throw error;
-
-      // Update local state
-      const updatedProperties = properties.map(p => 
-        p.id === propertyId ? { ...p, status: newStatus } : p
-      );
-      setProperties(updatedProperties);
-      setFilteredProperties(updatedProperties.filter(property => 
-        activeFilter === "all" || property.status === activeFilter
+      
+      setListings(listings.map(listing => 
+        listing.id === id ? { ...listing, status: newStatus } : listing
       ));
-
-      toast.success(`Property status updated to ${newStatus}`);
+      
+      uiToast({
+        title: "Status Updated",
+        description: `The property status has been updated to ${newStatus}.`,
+      });
     } catch (error: any) {
       console.error("Error updating property status:", error);
-      toast.error("Error updating property status", {
+      toast.error("Error updating status", {
         description: error.message
       });
     }
@@ -138,9 +105,30 @@ const MyListings = () => {
   if (loading) {
     return (
       <Layout>
-        <div className="flex justify-center items-center py-20">
-          <Loader className="h-8 w-8 animate-spin text-naija-primary mr-2" />
-          <span>Loading your listings...</span>
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex justify-center items-center py-20">
+            <Loader className="h-8 w-8 animate-spin text-naija-primary" />
+            <span className="ml-2">Loading your properties...</span>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center py-12 bg-red-50 rounded-lg">
+            <h3 className="text-xl font-medium mb-2 text-red-700">Error Loading Properties</h3>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <Button 
+              onClick={() => window.location.reload()} 
+              className="bg-naija-primary hover:bg-naija-primary/90"
+            >
+              Try Again
+            </Button>
+          </div>
         </div>
       </Layout>
     );
@@ -149,64 +137,40 @@ const MyListings = () => {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">My Property Listings</h1>
-          <Link to="/add-property">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold">My Property Listings</h1>
+            <p className="text-gray-600 mt-2">Manage your rental properties</p>
+          </div>
+          <div className="mt-4 md:mt-0">
             <Button className="bg-naija-primary hover:bg-naija-primary/90">
-              <Plus className="h-5 w-5 mr-2" />
-              Add New Property
+              <Plus className="mr-2 h-4 w-4" />
+              <Link to="/add-property">Add New Property</Link>
             </Button>
-          </Link>
+          </div>
         </div>
 
         <StatusFilterButtons 
-          activeFilter={activeFilter}
-          onFilterChange={handleFilterChange}
+          currentFilter={filter}
+          onFilterChange={setFilter}
         />
 
-        {filteredProperties.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="mb-4">
-              <Plus className="h-16 w-16 text-gray-400 mx-auto" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">
-              {activeFilter === "all" ? "No properties listed yet" : `No ${activeFilter} properties`}
-            </h3>
-            <p className="text-gray-500 mb-6">
-              {activeFilter === "all" 
-                ? "Start by adding your first property listing."
-                : `You don't have any ${activeFilter} properties at the moment.`
-              }
-            </p>
-            {activeFilter === "all" && (
-              <Link to="/add-property">
-                <Button className="bg-naija-primary hover:bg-naija-primary/90">
-                  Add Your First Property
-                </Button>
-              </Link>
-            )}
+        {filteredListings.length === 0 ? (
+          <div className="text-center py-12 bg-gray-50 rounded-lg">
+            <h3 className="text-xl font-medium mb-2">No properties found</h3>
+            <p className="text-gray-600 mb-6">You don't have any {filter !== "all" ? filter : ""} listings yet.</p>
+            <Button className="bg-naija-primary hover:bg-naija-primary/90">
+              <Link to="/add-property">Add Your First Property</Link>
+            </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProperties.map((property) => (
-              <ListingCard
-                key={property.id}
-                property={{
-                  id: property.id,
-                  title: property.title,
-                  price: `₦${property.price}`,
-                  period: property.period || 'monthly',
-                  image: property.image || '',
-                  bedrooms: property.bedrooms || 0,
-                  status: property.status || 'active',
-                  views: property.views || 0,
-                  created_at: property.created_at,
-                  state: property.state,
-                  lga: property.lga,
-                  area: property.area
-                }}
-                onDelete={() => handleDeleteProperty(property.id)}
-                onStatusUpdate={(newStatus) => handleStatusChange(property.id, newStatus)}
+          <div className="grid gap-6">
+            {filteredListings.map(listing => (
+              <ListingCard 
+                key={listing.id} 
+                property={listing}
+                onDelete={handleDeleteListing}
+                onStatusUpdate={handleStatusUpdate}
               />
             ))}
           </div>

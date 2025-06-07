@@ -2,39 +2,39 @@
 import { Button } from "@/components/ui/button";
 
 interface StatusFilterButtonsProps {
-  activeFilter: string;
+  currentFilter: string;
   onFilterChange: (filter: string) => void;
 }
 
-const StatusFilterButtons = ({ activeFilter, onFilterChange }: StatusFilterButtonsProps) => {
+const StatusFilterButtons = ({ currentFilter, onFilterChange }: StatusFilterButtonsProps) => {
   return (
     <div className="mb-6">
       <div className="flex space-x-2 overflow-x-auto pb-2">
         <Button
-          variant={activeFilter === "all" ? "default" : "outline"}
+          variant={currentFilter === "all" ? "default" : "outline"}
           onClick={() => onFilterChange("all")}
-          className={activeFilter === "all" ? "bg-naija-primary" : ""}
+          className={currentFilter === "all" ? "bg-naija-primary" : ""}
         >
           All
         </Button>
         <Button
-          variant={activeFilter === "active" ? "default" : "outline"}
+          variant={currentFilter === "active" ? "default" : "outline"}
           onClick={() => onFilterChange("active")}
-          className={activeFilter === "active" ? "bg-green-500" : ""}
+          className={currentFilter === "active" ? "bg-green-500" : ""}
         >
           Active
         </Button>
         <Button
-          variant={activeFilter === "inactive" ? "default" : "outline"}
+          variant={currentFilter === "inactive" ? "default" : "outline"}
           onClick={() => onFilterChange("inactive")}
-          className={activeFilter === "inactive" ? "bg-gray-500" : ""}
+          className={currentFilter === "inactive" ? "bg-gray-500" : ""}
         >
           Inactive
         </Button>
         <Button
-          variant={activeFilter === "rented" ? "default" : "outline"}
+          variant={currentFilter === "rented" ? "default" : "outline"}
           onClick={() => onFilterChange("rented")}
-          className={activeFilter === "rented" ? "bg-blue-500" : ""}
+          className={currentFilter === "rented" ? "bg-blue-500" : ""}
         >
           Rented
         </Button>
