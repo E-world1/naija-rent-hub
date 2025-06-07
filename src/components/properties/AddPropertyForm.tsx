@@ -67,7 +67,7 @@ const AddPropertyForm = () => {
     setIsLoading(true);
     
     try {
-      // Create property in Supabase
+      // Create property in Supabase with correct field mapping
       const { data, error } = await supabase
         .from('properties')
         .insert([
@@ -90,7 +90,8 @@ const AddPropertyForm = () => {
             agent_id: user?.id,
             status: 'active'
           }
-        ]);
+        ])
+        .select();
 
       if (error) throw error;
 
