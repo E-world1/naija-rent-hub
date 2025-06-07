@@ -162,7 +162,6 @@ const MyListings = () => {
         <StatusFilterButtons 
           activeFilter={activeFilter}
           onFilterChange={handleFilterChange}
-          properties={properties}
         />
 
         {filteredProperties.length === 0 ? (
@@ -195,22 +194,19 @@ const MyListings = () => {
                 property={{
                   id: property.id,
                   title: property.title,
-                  location: `${property.area ? `${property.area}, ` : ''}${property.lga}, ${property.state}`,
                   price: `₦${property.price}`,
                   period: property.period || 'monthly',
                   image: property.image || '',
                   bedrooms: property.bedrooms || 0,
-                  bathrooms: property.bathrooms,
-                  squareFeet: property.square_feet,
                   status: property.status || 'active',
                   views: property.views || 0,
-                  dateAdded: property.created_at,
-                  featured: false,
-                  agent: 'You',
-                  type: property.type
+                  created_at: property.created_at,
+                  state: property.state,
+                  lga: property.lga,
+                  area: property.area
                 }}
                 onDelete={() => handleDeleteProperty(property.id)}
-                onStatusChange={(newStatus) => handleStatusChange(property.id, newStatus)}
+                onStatusUpdate={(newStatus) => handleStatusChange(property.id, newStatus)}
               />
             ))}
           </div>
